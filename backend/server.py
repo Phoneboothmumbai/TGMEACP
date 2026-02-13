@@ -217,8 +217,7 @@ async def login(data: UserLogin):
     )
 
 @api_router.post("/auth/change-password")
-async def change_password(data: PasswordChange, authorization: str = None):
-    user = await get_current_user(authorization)
+async def change_password(data: PasswordChange, user: dict = Depends(get_current_user)):
     user_doc = await db.users.find_one({"id": user["id"]}, {"_id": 0})
     
     if not verify_password(data.current_password, user_doc["password"]):
