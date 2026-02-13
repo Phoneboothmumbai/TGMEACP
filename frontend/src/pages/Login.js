@@ -22,7 +22,7 @@ export default function Login() {
     try {
       await login(email, password);
       toast.success("Welcome back!");
-      navigate("/");
+      navigate("/admin");
     } catch (error) {
       toast.error(error.response?.data?.detail || "Invalid credentials");
     } finally {
