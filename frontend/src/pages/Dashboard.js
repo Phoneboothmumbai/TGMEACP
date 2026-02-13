@@ -36,11 +36,13 @@ import {
 } from "lucide-react";
 
 const statusConfig = {
+  pending_approval: { label: "Pending Approval", icon: AlertCircle, className: "bg-orange-100 text-orange-800 hover:bg-orange-100" },
   pending: { label: "Pending", icon: Clock, className: "bg-amber-100 text-amber-800 hover:bg-amber-100" },
   email_sent: { label: "Email Sent", icon: Mail, className: "bg-purple-100 text-purple-800 hover:bg-purple-100" },
   payment_pending: { label: "Payment Pending", icon: CreditCard, className: "bg-blue-100 text-blue-800 hover:bg-blue-100" },
   activated: { label: "Activated", icon: CheckCircle2, className: "bg-green-100 text-green-800 hover:bg-green-100" },
   cancelled: { label: "Cancelled", icon: XCircle, className: "bg-red-100 text-red-800 hover:bg-red-100" },
+  declined: { label: "Declined", icon: XCircle, className: "bg-gray-100 text-gray-800 hover:bg-gray-100" },
 };
 
 export default function Dashboard() {
