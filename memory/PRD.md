@@ -25,7 +25,8 @@ Build an AppleCare+ activation management system for Apple partners. The process
 
 ### Implemented ✅
 - [x] PUBLIC activation form (no login required)
-- [x] Form cursor bug fixed (InputField moved outside component)
+- [x] Form cursor bug FIXED (using individual useState per field)
+- [x] Dealer Email field added to form
 - [x] Billing Location and Payment Type fields removed from form (hardcoded in backend)
 - [x] JWT-based authentication for admin portal
 - [x] Dashboard with stats and requests table with Ticket ID column
@@ -40,12 +41,13 @@ Build an AppleCare+ activation management system for Apple partners. The process
   - Date = Activation Date
   - Customer details from form
   - Product table with 2 items: Device + AppleCare+
+  - **Serial number shown on BOTH Device AND AppleCare+ items**
   - Device auto-detected from AppleCare+ plan (iPhone, MacBook Pro, iPad, etc.)
   - Device pricing: MacBook Air ₹80K, MacBook Pro ₹1.69L, iPhone ₹79.9K, etc.
   - 18% GST inclusive with CGST/SGST breakdown
   - HSN/SAC codes, amount in words, tax breakdown table
 - [x] Email to Apple in tabular format (ready when SMTP configured)
-- [x] TGME Support Ticket creation with ID sync (ready when API configured)
+- [x] **TGME Support Ticket uses DEALER details** (name, email, mobile) not customer
 - [x] Renamed "osTicket" to "TGME Support Ticket" throughout the app
 
 ### URL Structure
