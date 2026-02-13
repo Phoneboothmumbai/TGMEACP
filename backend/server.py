@@ -688,10 +688,11 @@ async def generate_invoice_pdf(request_data: dict, filename: str) -> str:
         format_indian_currency(product_price)
     ])
     
-    # AppleCare+ row
+    # AppleCare+ row - also include serial number
     applecare_name = plan_name if plan_name else f"AppleCare+ for {product_info['name']}"
+    applecare_name_with_serial = f"<b>{applecare_name}</b><br/><font size=7>Serial No.: {serial_no}</font>"
     product_table_data.append([
-        Paragraph(f"<b>{applecare_name}</b>", normal_style),
+        Paragraph(applecare_name_with_serial, normal_style),
         "998716",  # SAC code for warranty services
         "1",
         format_indian_currency(applecare_base),
