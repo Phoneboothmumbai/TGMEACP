@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,14 +28,31 @@ import {
   Mail, 
   Smartphone, 
   Hash,
-  Building2,
-  CreditCard,
   CheckCircle2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// InputField component defined OUTSIDE to prevent re-creation on each render
+const InputField = memo(({ icon: Icon, label, id, value, onChange, ...props }) => (
+  <div className="space-y-2">
+    <Label htmlFor={id} className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+      {label}
+    </Label>
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+      <Input
+        id={id}
+        value={value}
+        onChange={onChange}
+        className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+        {...props}
+      />
+    </div>
+  </div>
+));
 
 export default function PublicForm() {
   const navigate = useNavigate();
@@ -56,8 +73,6 @@ export default function PublicForm() {
     serial_number: "",
     plan_id: "",
     device_activation_date: null,
-    billing_location: "",
-    payment_type: "Insta",
   });
 
   useEffect(() => {
@@ -108,22 +123,6 @@ export default function PublicForm() {
 
   const selectedPlan = plans.find((p) => p.id === formData.plan_id);
 
-  const InputField = ({ icon: Icon, label, id, ...props }) => (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-        {label}
-      </Label>
-      <div className="relative">
-        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
-        <Input
-          id={id}
-          className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
-          {...props}
-        />
-      </div>
-    </div>
-  );
-
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-4">
@@ -159,8 +158,6 @@ export default function PublicForm() {
                 serial_number: "",
                 plan_id: "",
                 device_activation_date: null,
-                billing_location: "",
-                payment_type: "Insta",
               });
             }}
             className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-8"
@@ -309,11 +306,8 @@ export default function PublicForm() {
                       data-testid="public-plan-select-btn"
                     >
                       {selectedPlan ? (
-                        <span className="flex items-center gap-2">
-                          <span>{selectedPlan.name}</span>
-                          <code className="text-xs bg-white px-1.5 py-0.5 rounded text-[#86868B]">
-                            {selectedPlan.part_code}
-                          </code>
+                        <span className="text-sm truncate">
+                          {selectedPlan.sku || selectedPlan.part_code} - {selectedPlan.description || selectedPlan.name} {selectedPlan.mrp ? `(₹${selectedPlan.mrp.toLocaleString('en-IN')})` : ''}
                         </span>
                       ) : (
                         <span className="text-[#86868B]">Select a plan...</span>
@@ -330,7 +324,7 @@ export default function PublicForm() {
                           {plans.map((plan) => (
                             <CommandItem
                               key={plan.id}
-                              value={`${plan.name} ${plan.part_code}`}
+                              value={`${plan.sku || plan.part_code} ${plan.description || plan.name} ${plan.mrp || ''}`}
                               onSelect={() => {
                                 handleChange("plan_id", plan.id);
                                 setPlanOpen(false);
@@ -344,8 +338,9 @@ export default function PublicForm() {
                                 )}
                               />
                               <div className="flex flex-col">
-                                <span>{plan.name}</span>
-                                <span className="text-xs text-[#86868B] font-mono">{plan.part_code}</span>
+                                <span className="font-mono text-sm">{plan.sku || plan.part_code}</span>
+                                <span className="text-xs text-[#1D1D1F]">{plan.description || plan.name}</span>
+                                {plan.mrp && <span className="text-xs text-[#0071E3] font-medium">₹{plan.mrp.toLocaleString('en-IN')}</span>}
                               </div>
                             </CommandItem>
                           ))}
@@ -394,35 +389,6 @@ export default function PublicForm() {
                 </Popover>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Building2}
-                  label="Billing Location"
-                  id="billing_location"
-                  value={formData.billing_location}
-                  onChange={(e) => handleChange("billing_location", e.target.value)}
-                  placeholder="Enter billing location"
-                  data-testid="public-billing-location-input"
-                />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-                    Payment Type
-                  </Label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
-                    <select
-                      value={formData.payment_type}
-                      onChange={(e) => handleChange("payment_type", e.target.value)}
-                      className="w-full pl-10 pr-4 h-11 bg-[#F5F5F7] border-transparent rounded-lg focus:border-[#0071E3] focus:ring-0 text-[#1D1D1F]"
-                      data-testid="public-payment-type-select"
-                    >
-                      <option value="Insta">Insta</option>
-                      <option value="Credit GT">Credit GT</option>
-                      <option value="MM2">MM2</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Submit */}
