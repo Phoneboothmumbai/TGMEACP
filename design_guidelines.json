@@ -1,0 +1,133 @@
+{
+  "identity": {
+    "name": "E1",
+    "archetype": "The Anti-AI Designer",
+    "mission": "Create a dashboard that feels like a precision tool, not a generic template.",
+    "principles": [
+      "Fusion over Imitation: Mix Swiss clarity with 'Pro' app density.",
+      "Content is King: Data legibility is the primary aesthetic.",
+      "Negative Space: Use whitespace to group logic, not just for decoration.",
+      "Contrast: High contrast for text, subtle contrast for containers."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Plus Jakarta Sans",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
+    },
+    "weights": {
+      "heading": "600",
+      "body": "400",
+      "bold": "500"
+    },
+    "sizes": {
+      "h1": "text-3xl tracking-tight font-semibold",
+      "h2": "text-xl tracking-tight font-medium",
+      "body": "text-sm leading-relaxed",
+      "small": "text-xs text-muted-foreground"
+    },
+    "instructions": "Import fonts from Google Fonts in index.css. Use 'Plus Jakarta Sans' for all headings and 'Inter' for body text. Use 'JetBrains Mono' for IMEI, Serial Numbers, and Codes."
+  },
+  "colors": {
+    "theme": "light",
+    "palette": {
+      "background": "#F5F5F7",
+      "foreground": "#1D1D1F",
+      "card": "#FFFFFF",
+      "card_foreground": "#1D1D1F",
+      "primary": "#0071E3",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#E8E8ED",
+      "secondary_foreground": "#1D1D1F",
+      "muted": "#F5F5F7",
+      "muted_foreground": "#86868B",
+      "accent": "#0071E3",
+      "accent_foreground": "#FFFFFF",
+      "destructive": "#FF3B30",
+      "destructive_foreground": "#FFFFFF",
+      "border": "#D2D2D7",
+      "input": "#E8E8ED",
+      "ring": "#0071E3"
+    },
+    "usage": {
+      "dashboard_bg": "bg-[#F5F5F7]",
+      "card_bg": "bg-white",
+      "sidebar_bg": "bg-[#FBFBFD] border-r border-[#D2D2D7]",
+      "header_bg": "bg-white/80 backdrop-blur-md border-b border-[#D2D2D7]"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "container_padding": "p-6 md:p-8",
+      "section_gap": "gap-8",
+      "item_gap": "gap-4"
+    },
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6",
+      "form": "max-w-2xl mx-auto space-y-8"
+    },
+    "radius": {
+      "default": "rounded-lg",
+      "small": "rounded-md",
+      "large": "rounded-xl"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-sm font-medium rounded-full px-6",
+      "secondary": "bg-[#E8E8ED] hover:bg-[#D2D2D7] text-[#1D1D1F] font-medium rounded-full px-6",
+      "ghost": "hover:bg-[#F5F5F7] text-[#1D1D1F] rounded-lg"
+    },
+    "inputs": {
+      "default": "bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-10 px-4 transition-all",
+      "label": "text-xs font-medium text-[#86868B] uppercase tracking-wider mb-1.5 block"
+    },
+    "cards": {
+      "default": "bg-white border border-[#D2D2D7]/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-6",
+      "hover": "hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300"
+    },
+    "tables": {
+      "header": "bg-[#F5F5F7] text-[#86868B] text-xs font-medium uppercase tracking-wider h-10",
+      "row": "border-b border-[#E8E8ED] hover:bg-[#F5F5F7]/50 transition-colors",
+      "cell": "py-3 px-4 text-sm text-[#1D1D1F]"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "bg-white/80 backdrop-blur-xl border-b border-white/20",
+    "shadows": {
+      "soft": "shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]",
+      "sharp": "shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
+    },
+    "animations": {
+      "hover": "transition-all duration-200 ease-out",
+      "enter": "animate-in fade-in slide-in-from-bottom-4 duration-500"
+    }
+  },
+  "assets": {
+    "icons": "lucide-react",
+    "images": {
+      "login_bg": "https://images.unsplash.com/photo-1648726131384-60a83a822afc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwYWJzdHJhY3QlMjB0ZWNobm9sb2d5JTIwd2hpdGUlMjBncmV5fGVufDB8fHx8MTc3MDk4MjAwOHww&ixlib=rb-4.1.0&q=85",
+      "dashboard_hero": "https://images.unsplash.com/photo-1759975652551-cf4cdcf52973?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxhcHBsZSUyMGRldmljZXMlMjBtaW5pbWFsaXN0JTIwZGVzayUyMHNldHVwfGVufDB8fHx8MTc3MDk4MjAxM3ww&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Install 'lucide-react', 'recharts', 'date-fns', 'react-hook-form', 'zod', '@tanstack/react-table', 'sonner'.",
+    "2. CLEANUP: Remove default App.css styles. Reset body margin/padding in index.css.",
+    "3. FONTS: Add Google Fonts import for 'Plus Jakarta Sans' and 'Inter' to index.css.",
+    "4. COMPONENTS: Use shadcn/ui components but customize them using the 'components' rules above. Do not use default shadcn styles blindly.",
+    "5. LAYOUT: Create a 'DashboardLayout' component with a sidebar and top header. Use the 'dashboard_bg' color for the main content area.",
+    "6. FORMS: Use 'react-hook-form' with 'zod' validation. Style inputs to be 'filled' style (light grey bg) rather than just bordered.",
+    "7. TABLES: Build a reusable 'DataTable' component using tanstack table. Ensure headers are uppercase and small.",
+    "8. NOTIFICATIONS: Use 'sonner' for all toast notifications (success/error).",
+    "9. AUTH: Create a clean, centered Login card on the 'login_bg' image background.",
+    "10. DATA-TESTID: Add 'data-testid' to all inputs, buttons, and major containers."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for backgrounds, use solid colors or subtle noise.",
+    "Do not center align the app container.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Every interaction needs micro-animations.",
+    "Use 'sonner' for toasts."
+  ]
+}
