@@ -479,8 +479,7 @@ Dealer: {request_data.get('dealer_name', '')} ({request_data.get('dealer_mobile'
 # ==================== ACTIVATION REQUESTS ROUTES ====================
 
 @api_router.get("/activation-requests", response_model=List[ActivationRequest])
-async def get_activation_requests(authorization: str = None, status: Optional[str] = None):
-    await get_current_user(authorization)
+async def get_activation_requests(status: Optional[str] = None, user: dict = Depends(get_current_user)):
     query = {}
     if status:
         query["status"] = status
@@ -493,8 +492,7 @@ async def get_activation_requests(authorization: str = None, status: Optional[st
     return requests
 
 @api_router.get("/activation-requests/{request_id}", response_model=ActivationRequest)
-async def get_activation_request(request_id: str, authorization: str = None):
-    await get_current_user(authorization)
+async def get_activation_request(request_id: str, user: dict = Depends(get_current_user)):
     req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
