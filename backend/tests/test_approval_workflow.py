@@ -198,20 +198,20 @@ class TestActivationRequestApprovalWorkflow:
         
         print(f"SUCCESS: Dashboard decline endpoint working (request {request_id} -> declined)")
     
-    def test_approve_already_processed_request_fails(self, plan_id, auth_token):
-        """Test that approving an already processed request fails"""
+    def test_cannot_approve_activated_request(self, plan_id, auth_token):
+        """Test that approving an already activated request fails"""
         assert plan_id is not None, "No plans available for testing"
         
-        # Create and approve a request
+        # Create a request
         request_data = {
-            "dealer_name": "TEST_Already_Processed_Dealer",
+            "dealer_name": "TEST_Already_Activated_Dealer",
             "dealer_mobile": "9876543213",
-            "dealer_email": "already_processed@test.com",
-            "customer_name": "TEST_Already_Processed_Customer",
+            "dealer_email": "already_activated@test.com",
+            "customer_name": "TEST_Already_Activated_Customer",
             "customer_mobile": "9123456782",
-            "customer_email": "already_processed_customer@test.com",
+            "customer_email": "already_activated_customer@test.com",
             "model_id": "iPhone 15",
-            "serial_number": "TEST_ALREADY_PROCESSED_001",
+            "serial_number": "TEST_ALREADY_ACTIVATED_001",
             "plan_id": plan_id,
             "device_activation_date": "2026-01-15"
         }
@@ -221,17 +221,20 @@ class TestActivationRequestApprovalWorkflow:
         
         headers = {"Authorization": f"Bearer {auth_token}"}
         
-        # First approve
-        requests.post(f"{BASE_URL}/api/activation-requests/{request_id}/approve", headers=headers)
-        
-        # Try to decline after approval - should fail
-        decline_response = requests.post(
-            f"{BASE_URL}/api/activation-requests/{request_id}/decline",
+        # Change status to 'activated' directly
+        requests.put(
+            f"{BASE_URL}/api/activation-requests/{request_id}/status?status=activated",
             headers=headers
         )
         
-        assert decline_response.status_code == 400, "Should not be able to decline already approved request"
-        print("SUCCESS: Cannot decline already approved request")
+        # Try to approve an activated request - should fail
+        approve_response = requests.post(
+            f"{BASE_URL}/api/activation-requests/{request_id}/approve",
+            headers=headers
+        )
+        
+        assert approve_response.status_code == 400, "Should not be able to approve already activated request"
+        print("SUCCESS: Cannot approve already activated request")
 
 
 class TestEmailLinkApproval:
