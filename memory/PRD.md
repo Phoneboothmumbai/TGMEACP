@@ -65,24 +65,30 @@ Build an AppleCare+ activation management system for Apple partners. The process
 ### URL Structure
 - `/` - Public form (anyone can access)
 - `/login` - Admin login
-- `/admin` - Admin dashboard
-- `/admin/settings` - Settings (Email, TGME Support Ticket, Plans, Password)
+- `/admin` - Admin dashboard (with approval buttons)
+- `/admin/settings` - Settings (Email, Approval Email, TGME Support Ticket, Plans, Password)
 - `/admin/request/:id` - Request details
+- `/api/activation-requests/{id}/approve-link?token={token}` - Email-based approval (no auth)
+- `/api/activation-requests/{id}/decline-link?token={token}` - Email-based decline (no auth)
 
 ## Database Collections
 - `users` - Admin users
 - `plans` - AppleCare+ plans master with: id, name, part_code, sku, description, mrp, active, created_at
-- `activation_requests` - Activation requests with tgme_ticket_id field
-- `settings` - System configuration with multiple email support
+- `activation_requests` - Activation requests with tgme_ticket_id field, **status now includes: pending_approval, pending, email_sent, payment_pending, activated, declined, cancelled**
+- `settings` - System configuration with multiple email support **and approval_email field**
 
 ## API Endpoints
 - `POST /api/auth/login` - Admin login
 - `GET /api/auth/me` - Get current user
 - `POST /api/auth/change-password` - Change password
 - `GET /api/activation-requests` - List all requests
-- `POST /api/activation-requests` - Create new request (public)
+- `POST /api/activation-requests` - Create new request (public) - **now returns status: pending_approval**
 - `GET /api/activation-requests/{id}` - Get request details
 - `PUT /api/activation-requests/{id}/status` - Update status
+- **`POST /api/activation-requests/{id}/approve` - Dashboard approve (auth required)**
+- **`POST /api/activation-requests/{id}/decline` - Dashboard decline (auth required)**
+- **`GET /api/activation-requests/{id}/approve-link?token=` - Email approve (token based)**
+- **`GET /api/activation-requests/{id}/decline-link?token=` - Email decline (token based)**
 - `GET /api/plans` - List plans
 - `POST /api/plans` - Create plan
 - `PUT /api/plans/{id}` - Update plan
@@ -90,26 +96,28 @@ Build an AppleCare+ activation management system for Apple partners. The process
 - `GET /api/plans/sample` - Download sample Excel
 - `POST /api/plans/upload` - Upload plans from Excel
 - `GET /api/settings` - Get settings
-- `PUT /api/settings` - Update settings
+- `PUT /api/settings` - Update settings **- includes approval_email field**
+- `GET /api/stats` - **Returns pending_approval and declined counts**
 
 ## Prioritized Backlog
 
 ### P0 - Critical (Next)
 - [ ] Full TGME Support Ticket integration (waiting for user API credentials)
-- [ ] Full SMTP email integration (waiting for user credentials)
+- [ ] Full SMTP email integration (waiting for user credentials) - **then approval emails will work**
 
 ### P1 - High Priority
-- [ ] PDF invoice customization
+- [ ] PDF invoice customization (user asked to remove "dealer number" - need clarification)
 - [ ] Email templates customization
+- [ ] Fix plan data integrity issue (Excel upload column mapping)
 
 ### P2 - Future Enhancements
 - [ ] Bulk activation requests import
 - [ ] Reporting and analytics
 - [ ] Dealer portal with login
 
-## Default Credentials
-- Email: `admin@applecare.com`
-- Password: `admin123`
+## Current Admin Credentials
+- Email: `ck@motta.in`
+- Password: `Charu@123@`
 
 ## Tech Stack
 - Backend: FastAPI, MongoDB, JWT
