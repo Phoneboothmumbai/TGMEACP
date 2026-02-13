@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { getActivationRequests, getStats, updateRequestStatus } from "@/lib/api";
+import { getActivationRequests, getStats, updateRequestStatus, approveRequest, declineRequest } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,10 @@ import {
   CreditCard, 
   XCircle,
   Mail,
-  FileText
+  FileText,
+  AlertCircle,
+  ThumbsUp,
+  ThumbsDown
 } from "lucide-react";
 
 const statusConfig = {
