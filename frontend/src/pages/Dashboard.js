@@ -210,9 +210,9 @@ export default function Dashboard() {
                         <p className="text-sm text-[#1D1D1F]">{request.device_activation_date}</p>
                       </TableCell>
                       <TableCell>
-                        {request.osticket_id ? (
+                        {(request.tgme_ticket_id || request.osticket_id) ? (
                           <code className="font-mono text-xs text-[#0071E3] bg-blue-50 px-2 py-1 rounded">
-                            #{request.osticket_id}
+                            #{request.tgme_ticket_id || request.osticket_id}
                           </code>
                         ) : (
                           <span className="text-xs text-[#86868B]">-</span>
