@@ -30,8 +30,7 @@ import {
   Mail, 
   Smartphone, 
   Hash,
-  Building2,
-  CreditCard
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,19 +41,17 @@ export default function NewRequest() {
   const [planOpen, setPlanOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
-    dealer_name: "",
-    dealer_mobile: "",
-    customer_name: "",
-    customer_mobile: "",
-    customer_email: "",
-    model_id: "",
-    serial_number: "",
-    plan_id: "",
-    device_activation_date: null,
-    billing_location: "",
-    payment_type: "Insta",
-  });
+  // Individual state for each field to prevent re-render issues
+  const [dealerName, setDealerName] = useState("");
+  const [dealerMobile, setDealerMobile] = useState("");
+  const [dealerEmail, setDealerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerMobile, setCustomerMobile] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [modelId, setModelId] = useState("");
+  const [serialNumber, setSerialNumber] = useState("");
+  const [planId, setPlanId] = useState("");
+  const [activationDate, setActivationDate] = useState(null);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -68,19 +65,15 @@ export default function NewRequest() {
     fetchPlans();
   }, []);
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.plan_id) {
+    if (!planId) {
       toast.error("Please select an AppleCare+ plan");
       return;
     }
     
-    if (!formData.device_activation_date) {
+    if (!activationDate) {
       toast.error("Please select the device activation date");
       return;
     }
@@ -88,8 +81,16 @@ export default function NewRequest() {
     setLoading(true);
     try {
       const submitData = {
-        ...formData,
-        device_activation_date: format(formData.device_activation_date, "yyyy-MM-dd"),
+        dealer_name: dealerName,
+        dealer_mobile: dealerMobile,
+        dealer_email: dealerEmail,
+        customer_name: customerName,
+        customer_mobile: customerMobile,
+        customer_email: customerEmail,
+        model_id: modelId,
+        serial_number: serialNumber,
+        plan_id: planId,
+        device_activation_date: format(activationDate, "yyyy-MM-dd"),
       };
       await createActivationRequest(submitData);
       toast.success("Activation request created successfully");
@@ -101,23 +102,7 @@ export default function NewRequest() {
     }
   };
 
-  const selectedPlan = plans.find((p) => p.id === formData.plan_id);
-
-  const InputField = ({ icon: Icon, label, id, ...props }) => (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-        {label}
-      </Label>
-      <div className="relative">
-        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
-        <Input
-          id={id}
-          className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
-          {...props}
-        />
-      </div>
-    </div>
-  );
+  const selectedPlan = plans.find((p) => p.id === planId);
 
   return (
     <DashboardLayout title="New Activation Request">
@@ -130,26 +115,58 @@ export default function NewRequest() {
                 Dealer Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Building2}
-                  label="Dealer Name"
-                  id="dealer_name"
-                  value={formData.dealer_name}
-                  onChange={(e) => handleChange("dealer_name", e.target.value)}
-                  placeholder="Enter dealer name"
-                  required
-                  data-testid="dealer-name-input"
-                />
-                <InputField
-                  icon={Phone}
-                  label="Dealer Mobile"
-                  id="dealer_mobile"
-                  value={formData.dealer_mobile}
-                  onChange={(e) => handleChange("dealer_mobile", e.target.value)}
-                  placeholder="Enter mobile number"
-                  required
-                  data-testid="dealer-mobile-input"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="dealer_name" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Dealer Name
+                  </Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="dealer_name"
+                      value={dealerName}
+                      onChange={(e) => setDealerName(e.target.value)}
+                      placeholder="Enter dealer name"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="dealer-name-input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dealer_mobile" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Dealer Mobile
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="dealer_mobile"
+                      value={dealerMobile}
+                      onChange={(e) => setDealerMobile(e.target.value)}
+                      placeholder="Enter mobile number"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="dealer-mobile-input"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dealer_email" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                  Dealer Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                  <Input
+                    id="dealer_email"
+                    type="email"
+                    value={dealerEmail}
+                    onChange={(e) => setDealerEmail(e.target.value)}
+                    placeholder="Enter dealer email"
+                    required
+                    className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                    data-testid="dealer-email-input"
+                  />
+                </div>
               </div>
             </div>
 
@@ -159,38 +176,59 @@ export default function NewRequest() {
                 Customer Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={User}
-                  label="Customer Name"
-                  id="customer_name"
-                  value={formData.customer_name}
-                  onChange={(e) => handleChange("customer_name", e.target.value)}
-                  placeholder="Enter customer name"
-                  required
-                  data-testid="customer-name-input"
-                />
-                <InputField
-                  icon={Phone}
-                  label="Customer Mobile"
-                  id="customer_mobile"
-                  value={formData.customer_mobile}
-                  onChange={(e) => handleChange("customer_mobile", e.target.value)}
-                  placeholder="Enter mobile number"
-                  required
-                  data-testid="customer-mobile-input"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="customer_name" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Customer Name
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="customer_name"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter customer name"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="customer-name-input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customer_mobile" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Customer Mobile
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="customer_mobile"
+                      value={customerMobile}
+                      onChange={(e) => setCustomerMobile(e.target.value)}
+                      placeholder="Enter mobile number"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="customer-mobile-input"
+                    />
+                  </div>
+                </div>
               </div>
-              <InputField
-                icon={Mail}
-                label="Customer Email"
-                id="customer_email"
-                type="email"
-                value={formData.customer_email}
-                onChange={(e) => handleChange("customer_email", e.target.value)}
-                placeholder="Enter email address"
-                required
-                data-testid="customer-email-input"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="customer_email" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                  Customer Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                  <Input
+                    id="customer_email"
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    required
+                    className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                    data-testid="customer-email-input"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Device Section */}
@@ -199,26 +237,40 @@ export default function NewRequest() {
                 Device Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Smartphone}
-                  label="Model ID"
-                  id="model_id"
-                  value={formData.model_id}
-                  onChange={(e) => handleChange("model_id", e.target.value)}
-                  placeholder="e.g., iPhone 15 Pro Max"
-                  required
-                  data-testid="model-id-input"
-                />
-                <InputField
-                  icon={Hash}
-                  label="Serial Number / IMEI"
-                  id="serial_number"
-                  value={formData.serial_number}
-                  onChange={(e) => handleChange("serial_number", e.target.value)}
-                  placeholder="Enter serial number"
-                  required
-                  data-testid="serial-number-input"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="model_id" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Model ID
+                  </Label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="model_id"
+                      value={modelId}
+                      onChange={(e) => setModelId(e.target.value)}
+                      placeholder="e.g., iPhone 15 Pro Max"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="model-id-input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="serial_number" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Serial Number / IMEI
+                  </Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="serial_number"
+                      value={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                      placeholder="Enter serial number"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="serial-number-input"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Plan Selection */}
@@ -236,11 +288,8 @@ export default function NewRequest() {
                       data-testid="plan-select-btn"
                     >
                       {selectedPlan ? (
-                        <span className="flex items-center gap-2">
-                          <span>{selectedPlan.name}</span>
-                          <code className="text-xs bg-white px-1.5 py-0.5 rounded text-[#86868B]">
-                            {selectedPlan.part_code}
-                          </code>
+                        <span className="text-sm truncate">
+                          {selectedPlan.sku || selectedPlan.part_code} - {selectedPlan.description || selectedPlan.name} {selectedPlan.mrp ? `(₹${selectedPlan.mrp.toLocaleString('en-IN')})` : ''}
                         </span>
                       ) : (
                         <span className="text-[#86868B]">Select a plan...</span>
@@ -257,9 +306,9 @@ export default function NewRequest() {
                           {plans.map((plan) => (
                             <CommandItem
                               key={plan.id}
-                              value={`${plan.name} ${plan.part_code}`}
+                              value={`${plan.sku || plan.part_code} ${plan.description || plan.name} ${plan.mrp || ''}`}
                               onSelect={() => {
-                                handleChange("plan_id", plan.id);
+                                setPlanId(plan.id);
                                 setPlanOpen(false);
                               }}
                               data-testid={`plan-option-${plan.id}`}
@@ -267,12 +316,13 @@ export default function NewRequest() {
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  formData.plan_id === plan.id ? "opacity-100" : "opacity-0"
+                                  planId === plan.id ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               <div className="flex flex-col">
-                                <span>{plan.name}</span>
-                                <span className="text-xs text-[#86868B] font-mono">{plan.part_code}</span>
+                                <span className="font-mono text-sm">{plan.sku || plan.part_code}</span>
+                                <span className="text-xs text-[#1D1D1F]">{plan.description || plan.name}</span>
+                                {plan.mrp && <span className="text-xs text-[#0071E3] font-medium">₹{plan.mrp.toLocaleString('en-IN')}</span>}
                               </div>
                             </CommandItem>
                           ))}
@@ -294,13 +344,13 @@ export default function NewRequest() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal bg-[#F5F5F7] border-transparent hover:bg-[#E8E8ED] h-11",
-                        !formData.device_activation_date && "text-[#86868B]"
+                        !activationDate && "text-[#86868B]"
                       )}
                       data-testid="activation-date-btn"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.device_activation_date ? (
-                        format(formData.device_activation_date, "PPP")
+                      {activationDate ? (
+                        format(activationDate, "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -309,9 +359,9 @@ export default function NewRequest() {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={formData.device_activation_date}
+                      selected={activationDate}
                       onSelect={(date) => {
-                        handleChange("device_activation_date", date);
+                        setActivationDate(date);
                         setDateOpen(false);
                       }}
                       initialFocus
@@ -319,36 +369,6 @@ export default function NewRequest() {
                     />
                   </PopoverContent>
                 </Popover>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Building2}
-                  label="Billing Location"
-                  id="billing_location"
-                  value={formData.billing_location}
-                  onChange={(e) => handleChange("billing_location", e.target.value)}
-                  placeholder="Enter billing location"
-                  data-testid="billing-location-input"
-                />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-                    Payment Type
-                  </Label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
-                    <select
-                      value={formData.payment_type}
-                      onChange={(e) => handleChange("payment_type", e.target.value)}
-                      className="w-full pl-10 pr-4 h-11 bg-[#F5F5F7] border-transparent rounded-lg focus:border-[#0071E3] focus:ring-0 text-[#1D1D1F]"
-                      data-testid="payment-type-select"
-                    >
-                      <option value="Insta">Insta</option>
-                      <option value="Credit GT">Credit GT</option>
-                      <option value="MM2">MM2</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
 
