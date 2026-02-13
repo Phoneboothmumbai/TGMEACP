@@ -246,8 +246,8 @@ export default function RequestDetail() {
                 <Badge variant={request.email_sent ? "default" : "secondary"} className={request.email_sent ? "bg-green-100 text-green-800" : ""}>
                   {request.email_sent ? "Email Sent" : "Email Not Sent"}
                 </Badge>
-                <Badge variant={request.osticket_id ? "default" : "secondary"} className={request.osticket_id ? "bg-green-100 text-green-800" : ""}>
-                  {request.osticket_id ? `Ticket: ${request.osticket_id}` : "No Ticket"}
+                <Badge variant={(request.tgme_ticket_id || request.osticket_id) ? "default" : "secondary"} className={(request.tgme_ticket_id || request.osticket_id) ? "bg-green-100 text-green-800" : ""}>
+                  {(request.tgme_ticket_id || request.osticket_id) ? `Ticket: ${request.tgme_ticket_id || request.osticket_id}` : "No Ticket"}
                 </Badge>
               </div>
             </div>
