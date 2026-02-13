@@ -876,11 +876,11 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
             <td>{request_data.get('customer_name', '')}</td>
             <td>{request_data.get('customer_email', '')}</td>
             <td>{request_data.get('customer_mobile', '')}</td>
-            <td>{request_data.get('plan_part_code', '')}</td>
+            <td>{request_data.get('plan_sku', '') or request_data.get('plan_part_code', '')}</td>
             <td>{request_data.get('device_activation_date', '')}</td>
             <td>{request_data.get('billing_location', 'F9B4869273B7')}</td>
             <td>{request_data.get('payment_type', 'Insta')}</td>
-            <td>{request_data.get('plan_name', '')}</td>
+            <td>AppleCare+</td>
             <td>{settings.get('partner_name', '')}</td>
         </tr>
     </table>
