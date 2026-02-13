@@ -1116,7 +1116,20 @@ async def resend_email(request_id: str, background_tasks: BackgroundTasks, user:
     return {"message": "Email resend queued"}
 
 @api_router.get("/activation-requests/{request_id}/invoice")
-async def download_invoice(request_id: str, user: dict = Depends(get_current_user)):
+async def download_invoice(request_id: str, authorization: str = None):
+    # Accept token from query parameter for file downloads (browsers can't send headers for direct links)
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+    except InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
     req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
     if not req or not req.get('invoice_path'):
         raise HTTPException(status_code=404, detail="Invoice not found")
