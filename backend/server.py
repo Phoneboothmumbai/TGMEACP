@@ -1039,11 +1039,23 @@ async def create_activation_request(
     if not plan:
         raise HTTPException(status_code=400, detail="Invalid plan selected")
     
+    # Get plan details - prefer description over name, and sku over part_code
+    # (Excel upload sometimes puts wrong values in name/part_code fields)
+    plan_name_value = plan.get('description', '') or plan.get('name', '')
+    plan_sku_value = plan.get('sku', '') or ''
+    # Use SKU as part_code if part_code looks like a number (bad data)
+    plan_part_code_value = plan.get('part_code', '')
+    try:
+        float(plan_part_code_value)  # If it's a number, it's bad data
+        plan_part_code_value = plan_sku_value  # Use SKU instead
+    except (ValueError, TypeError):
+        pass  # It's a valid string, keep it
+    
     request_obj = ActivationRequest(
         **data.model_dump(),
-        plan_name=plan.get('name', '') or plan.get('description', ''),
-        plan_part_code=plan.get('part_code', ''),
-        plan_sku=plan.get('sku', ''),
+        plan_name=plan_name_value,
+        plan_part_code=plan_part_code_value,
+        plan_sku=plan_sku_value,
         plan_mrp=plan.get('mrp'),
         billing_location="F9B4869273B7",  # Hardcoded
         payment_type="Insta"  # Hardcoded
