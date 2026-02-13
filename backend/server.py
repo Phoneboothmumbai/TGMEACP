@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -25,6 +25,9 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+import io
+import openpyxl
+from openpyxl import Workbook
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -80,16 +83,20 @@ class TokenResponse(BaseModel):
 class AppleCarePlan(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    part_code: str
-    description: Optional[str] = ""
+    name: str = ""
+    part_code: str = ""
+    sku: str = ""
+    description: str = ""
+    mrp: Optional[float] = None
     active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AppleCarePlanCreate(BaseModel):
-    name: str
-    part_code: str
-    description: Optional[str] = ""
+    name: str = ""
+    part_code: str = ""
+    sku: str = ""
+    description: str = ""
+    mrp: Optional[float] = None
 
 class ActivationRequestCreate(BaseModel):
     dealer_name: str
@@ -101,8 +108,6 @@ class ActivationRequestCreate(BaseModel):
     serial_number: str
     plan_id: str
     device_activation_date: str
-    billing_location: Optional[str] = ""
-    payment_type: str = "Insta"
 
 class ActivationRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -117,12 +122,14 @@ class ActivationRequest(BaseModel):
     plan_id: str
     plan_name: Optional[str] = ""
     plan_part_code: Optional[str] = ""
+    plan_sku: Optional[str] = ""
+    plan_mrp: Optional[float] = None
     device_activation_date: str
-    billing_location: str = ""
-    payment_type: str = "Insta"
+    billing_location: str = "F9B4869273B7"  # Hardcoded as per requirement
+    payment_type: str = "Insta"  # Hardcoded as per requirement
     invoice_path: Optional[str] = None
     status: str = "pending"
-    osticket_id: Optional[str] = None
+    tgme_ticket_id: Optional[str] = None  # Renamed from osticket_id
     email_sent: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -130,11 +137,14 @@ class ActivationRequest(BaseModel):
 class SettingsModel(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "main_settings"
-    apple_email: str = ""
+    apple_email: str = ""  # Now supports comma-separated emails
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_email: str = ""
     smtp_password: str = ""
+    tgme_url: str = ""  # Renamed from osticket_url
+    tgme_api_key: str = ""  # Renamed from osticket_api_key
+    # Keep old field names for backward compatibility
     osticket_url: str = ""
     osticket_api_key: str = ""
     partner_name: str = ""
@@ -146,6 +156,8 @@ class SettingsUpdate(BaseModel):
     smtp_port: Optional[int] = None
     smtp_email: Optional[str] = None
     smtp_password: Optional[str] = None
+    tgme_url: Optional[str] = None
+    tgme_api_key: Optional[str] = None
     osticket_url: Optional[str] = None
     osticket_api_key: Optional[str] = None
     partner_name: Optional[str] = None
