@@ -54,7 +54,7 @@ export default function RequestDetail() {
       setRequest(response.data);
     } catch (error) {
       toast.error("Failed to load request");
-      navigate("/");
+      navigate("/admin");
     } finally {
       setLoading(false);
     }
