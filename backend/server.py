@@ -359,7 +359,7 @@ async def upload_plans_excel(file: UploadFile = File(...), user: dict = Depends(
                 if mrp_val:
                     try:
                         mrp = float(str(mrp_val).replace(',', '').replace('₹', '').strip())
-                    except:
+                    except ValueError:
                         pass
                 
                 # Skip if no SKU and no part code
@@ -550,7 +550,7 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
             part = MIMEBase('application', 'pdf')
             part.set_payload(f.read())
             encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f'attachment; filename=invoice.pdf')
+            part.add_header('Content-Disposition', 'attachment; filename=invoice.pdf')
             msg.attach(part)
     
     try:
