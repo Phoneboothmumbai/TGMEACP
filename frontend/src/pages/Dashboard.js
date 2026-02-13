@@ -82,6 +82,33 @@ export default function Dashboard() {
     }
   };
 
+  const handleApprove = async (requestId) => {
+    setActionLoading(prev => ({ ...prev, [requestId]: 'approve' }));
+    try {
+      await approveRequest(requestId);
+      toast.success("Request approved! Processing will begin shortly.");
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to approve request");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [requestId]: null }));
+    }
+  };
+
+  const handleDecline = async (requestId) => {
+    if (!window.confirm("Are you sure you want to decline this request?")) return;
+    setActionLoading(prev => ({ ...prev, [requestId]: 'decline' }));
+    try {
+      await declineRequest(requestId);
+      toast.success("Request declined");
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to decline request");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [requestId]: null }));
+    }
+  };
+
   const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-white border border-[#D2D2D7]/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-6 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300">
       <div className="flex items-center justify-between">
