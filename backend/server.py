@@ -286,8 +286,7 @@ async def get_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/settings", response_model=SettingsModel)
-async def update_settings(data: SettingsUpdate, authorization: str = None):
-    await get_current_user(authorization)
+async def update_settings(data: SettingsUpdate, user: dict = Depends(get_current_user)):
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     
