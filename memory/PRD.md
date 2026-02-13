@@ -35,7 +35,15 @@ Build an AppleCare+ activation management system for Apple partners. The process
 - [x] Settings page for Email, TGME Support Ticket, and Plans configuration
 - [x] Multiple Apple email recipients support (comma-separated)
 - [x] Request detail view with status management
-- [x] Auto PDF invoice generation
+- [x] **Professional PDF Invoice Generation** matching real invoice format:
+  - Random Indian mobile shop names and addresses
+  - Date = Activation Date
+  - Customer details from form
+  - Product table with 2 items: Device + AppleCare+
+  - Device auto-detected from AppleCare+ plan (iPhone, MacBook Pro, iPad, etc.)
+  - Device pricing: MacBook Air ₹80K, MacBook Pro ₹1.69L, iPhone ₹79.9K, etc.
+  - 18% GST inclusive with CGST/SGST breakdown
+  - HSN/SAC codes, amount in words, tax breakdown table
 - [x] Email to Apple in tabular format (ready when SMTP configured)
 - [x] TGME Support Ticket creation with ID sync (ready when API configured)
 - [x] Renamed "osTicket" to "TGME Support Ticket" throughout the app
