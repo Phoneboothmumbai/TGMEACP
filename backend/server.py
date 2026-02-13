@@ -236,7 +236,8 @@ async def get_me(user: dict = Depends(get_current_user)):
 # ==================== PLANS ROUTES ====================
 
 @api_router.get("/plans", response_model=List[AppleCarePlan])
-async def get_plans(active_only: bool = True):
+async def get_plans(active_only: bool = True, public: bool = False):
+    # Public endpoint for form dropdown - no auth required when public=True
     query = {"active": True} if active_only else {}
     plans = await db.plans.find(query, {"_id": 0}).to_list(1000)
     for plan in plans:
@@ -505,9 +506,9 @@ async def get_activation_request(request_id: str, user: dict = Depends(get_curre
 @api_router.post("/activation-requests", response_model=ActivationRequest)
 async def create_activation_request(
     data: ActivationRequestCreate,
-    background_tasks: BackgroundTasks,
-    user: dict = Depends(get_current_user)
+    background_tasks: BackgroundTasks
 ):
+    # Public endpoint - no auth required
     # Get plan details
     plan = await db.plans.find_one({"id": data.plan_id}, {"_id": 0})
     if not plan:
