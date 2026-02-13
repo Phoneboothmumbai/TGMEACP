@@ -885,11 +885,6 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
         </tr>
     </table>
     <br>
-    <p>Dealer Details:</p>
-    <ul>
-        <li>Dealer Name: {request_data.get('dealer_name', '')}</li>
-        <li>Dealer Mobile: {request_data.get('dealer_mobile', '')}</li>
-    </ul>
     <p>Best regards,<br>{settings.get('partner_name', 'Partner')}</p>
     </body>
     </html>
