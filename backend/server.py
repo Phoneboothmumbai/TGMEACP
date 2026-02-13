@@ -1187,16 +1187,16 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     # Create default admin if not exists
-    admin = await db.users.find_one({"email": "admin@applecare.com"})
+    admin = await db.users.find_one({"email": "ck@motta.in"})
     if not admin:
         await db.users.insert_one({
             "id": str(uuid.uuid4()),
-            "email": "admin@applecare.com",
+            "email": "ck@motta.in",
             "name": "Admin",
-            "password": hash_password("admin123"),
+            "password": hash_password("Charu@123@"),
             "created_at": datetime.now(timezone.utc).isoformat()
         })
-        logger.info("Default admin created: admin@applecare.com / admin123")
+        logger.info("Admin user created")
     
     # Create some default plans if none exist
     plans_count = await db.plans.count_documents({})
