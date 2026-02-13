@@ -146,15 +146,17 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40 bg-[#F5F5F7] border-transparent" data-testid="status-filter">
+              <SelectTrigger className="w-full sm:w-44 bg-[#F5F5F7] border-transparent" data-testid="status-filter">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending_approval">Pending Approval</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="email_sent">Email Sent</SelectItem>
                 <SelectItem value="payment_pending">Payment Pending</SelectItem>
                 <SelectItem value="activated">Activated</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
