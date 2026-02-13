@@ -357,7 +357,7 @@ export default function NewRequest() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/admin")}
                 className="px-6"
                 data-testid="cancel-btn"
               >
