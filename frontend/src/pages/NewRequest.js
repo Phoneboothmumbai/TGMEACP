@@ -93,7 +93,7 @@ export default function NewRequest() {
       };
       await createActivationRequest(submitData);
       toast.success("Activation request created successfully");
-      navigate("/");
+      navigate("/admin");
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to create request");
     } finally {
