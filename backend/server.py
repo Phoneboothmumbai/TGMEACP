@@ -488,9 +488,15 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
         logger.warning("Email settings not configured")
         return False
     
+    # Parse multiple email addresses (comma-separated)
+    apple_emails = [e.strip() for e in settings['apple_email'].split(',') if e.strip()]
+    if not apple_emails:
+        logger.warning("No valid Apple email addresses configured")
+        return False
+    
     msg = MIMEMultipart()
     msg['From'] = settings['smtp_email']
-    msg['To'] = settings['apple_email']
+    msg['To'] = ', '.join(apple_emails)  # Join multiple recipients
     msg['Subject'] = f"AppleCare+ Activation Request - {request_data.get('customer_name', 'Customer')}"
     
     # Build email body with tabular format
@@ -519,7 +525,7 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
             <td>{request_data.get('customer_mobile', '')}</td>
             <td>{request_data.get('plan_part_code', '')}</td>
             <td>{request_data.get('device_activation_date', '')}</td>
-            <td>{request_data.get('billing_location', '')}</td>
+            <td>{request_data.get('billing_location', 'F9B4869273B7')}</td>
             <td>{request_data.get('payment_type', 'Insta')}</td>
             <td>{request_data.get('plan_name', '')}</td>
             <td>{settings.get('partner_name', '')}</td>
@@ -556,18 +562,24 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
             password=settings['smtp_password'],
             start_tls=True
         )
-        logger.info(f"Email sent successfully to {settings['apple_email']}")
+        logger.info(f"Email sent successfully to {', '.join(apple_emails)}")
         return True
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
         return False
 
-# ==================== OSTICKET SERVICE ====================
+# ==================== TGME SUPPORT TICKET SERVICE ====================
 
-async def create_osticket(request_data: dict):
+async def create_tgme_ticket(request_data: dict):
+    """Create a TGME Support Ticket (formerly osTicket)"""
     settings = await db.settings.find_one({"id": "main_settings"}, {"_id": 0})
-    if not settings or not settings.get('osticket_url') or not settings.get('osticket_api_key'):
-        logger.warning("osTicket settings not configured")
+    
+    # Support both new and old field names for backward compatibility
+    tgme_url = settings.get('tgme_url') or settings.get('osticket_url') if settings else None
+    tgme_api_key = settings.get('tgme_api_key') or settings.get('osticket_api_key') if settings else None
+    
+    if not tgme_url or not tgme_api_key:
+        logger.warning("TGME Support Ticket settings not configured")
         return None
     
     ticket_data = {
@@ -598,22 +610,22 @@ Dealer: {request_data.get('dealer_name', '')} ({request_data.get('dealer_mobile'
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{settings['osticket_url']}/api/tickets.json",
+                f"{tgme_url}/api/tickets.json",
                 json=ticket_data,
                 headers={
-                    "X-API-Key": settings['osticket_api_key'],
+                    "X-API-Key": tgme_api_key,
                     "Content-Type": "application/json"
                 }
             )
             if response.status_code == 201:
                 ticket_id = response.text.strip('"')
-                logger.info(f"osTicket created: {ticket_id}")
+                logger.info(f"TGME Support Ticket created: {ticket_id}")
                 return ticket_id
             else:
-                logger.error(f"osTicket creation failed: {response.text}")
+                logger.error(f"TGME Support Ticket creation failed: {response.text}")
                 return None
     except Exception as e:
-        logger.error(f"osTicket error: {e}")
+        logger.error(f"TGME Support Ticket error: {e}")
         return None
 
 # ==================== ACTIVATION REQUESTS ROUTES ====================
