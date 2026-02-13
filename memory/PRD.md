@@ -124,6 +124,14 @@ Build an AppleCare+ activation management system for Apple partners. The process
 - Frontend: React, TailwindCSS, Shadcn/UI
 - PDF: ReportLab
 - Excel: OpenPyXL
+- Email: aiosmtplib
+
+## Approval Workflow Flow
+1. **Form Submission** → Request created with `pending_approval` status + Invoice PDF generated
+2. **Approval Email** → Sent to configured approval_email (default: contact@thegoodmen.in)
+3. **Admin Action** → Approve via email link OR dashboard button
+4. **If Approved** → Status changes to `pending`, TGME ticket created, Apple email sent
+5. **If Declined** → Status changes to `declined`, no further action
 
 ---
 Last Updated: Feb 13, 2026
