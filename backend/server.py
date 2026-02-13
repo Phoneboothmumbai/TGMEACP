@@ -1218,9 +1218,15 @@ async def process_activation_request(request_id: str):
     
     # Send email to Apple with ticket ID in subject
     email_sent = await send_activation_email(req, req.get('invoice_path'), ticket_id)
+    
+    # Update status to "email_sent" if email was sent successfully
+    update_data = {"email_sent": email_sent, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if email_sent:
+        update_data["status"] = "email_sent"
+    
     await db.activation_requests.update_one(
         {"id": request_id},
-        {"$set": {"email_sent": email_sent, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": update_data}
     )
 
 @api_router.put("/activation-requests/{request_id}/status")
