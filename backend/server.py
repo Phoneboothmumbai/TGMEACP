@@ -920,6 +920,113 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
         logger.error(f"Failed to send email: {e}")
         return False
 
+# ==================== APPROVAL EMAIL SERVICE ====================
+
+def generate_approval_token(request_id: str, action: str) -> str:
+    """Generate a secure token for approval/decline links"""
+    secret = f"{JWT_SECRET}-{request_id}-{action}"
+    return hashlib.sha256(secret.encode()).hexdigest()[:32]
+
+def verify_approval_token(request_id: str, action: str, token: str) -> bool:
+    """Verify the approval token"""
+    expected_token = generate_approval_token(request_id, action)
+    return token == expected_token
+
+async def send_approval_email(request_data: dict, base_url: str):
+    """Send approval request email to admin"""
+    settings = await db.settings.find_one({"id": "main_settings"}, {"_id": 0})
+    if not settings or not settings.get('smtp_email'):
+        logger.warning("SMTP settings not configured for approval email")
+        return False
+    
+    request_id = request_data.get('id', '')
+    approve_token = generate_approval_token(request_id, 'approve')
+    decline_token = generate_approval_token(request_id, 'decline')
+    
+    approve_url = f"{base_url}/api/activation-requests/{request_id}/approve-link?token={approve_token}"
+    decline_url = f"{base_url}/api/activation-requests/{request_id}/decline-link?token={decline_token}"
+    
+    msg = MIMEMultipart()
+    msg['From'] = settings['smtp_email']
+    msg['To'] = APPROVAL_EMAIL
+    msg['Subject'] = f"Approval Required: AppleCare+ Activation - {request_data.get('customer_name', '')}"
+    
+    html_body = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
+            <h1 style="color: white; margin: 0;">AppleCare+ Activation Request</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Approval Required</p>
+        </div>
+        
+        <div style="padding: 30px; background: #f8f9fa;">
+            <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Request Details</h2>
+                
+                <h3 style="color: #667eea; margin-top: 20px;">Customer Information</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 8px 0; color: #666;">Name:</td><td style="padding: 8px 0; font-weight: bold;">{request_data.get('customer_name', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">Email:</td><td style="padding: 8px 0;">{request_data.get('customer_email', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">Mobile:</td><td style="padding: 8px 0;">{request_data.get('customer_mobile', '')}</td></tr>
+                </table>
+                
+                <h3 style="color: #667eea; margin-top: 20px;">Dealer Information</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 8px 0; color: #666;">Name:</td><td style="padding: 8px 0; font-weight: bold;">{request_data.get('dealer_name', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">Email:</td><td style="padding: 8px 0;">{request_data.get('dealer_email', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">Mobile:</td><td style="padding: 8px 0;">{request_data.get('dealer_mobile', '')}</td></tr>
+                </table>
+                
+                <h3 style="color: #667eea; margin-top: 20px;">Device Information</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 8px 0; color: #666;">Model:</td><td style="padding: 8px 0; font-weight: bold;">{request_data.get('model_id', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">Serial/IMEI:</td><td style="padding: 8px 0; font-family: monospace;">{request_data.get('serial_number', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">Activation Date:</td><td style="padding: 8px 0;">{request_data.get('device_activation_date', '')}</td></tr>
+                </table>
+                
+                <h3 style="color: #667eea; margin-top: 20px;">Plan Details</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 8px 0; color: #666;">Plan:</td><td style="padding: 8px 0; font-weight: bold;">{request_data.get('plan_name', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">SKU:</td><td style="padding: 8px 0; font-family: monospace;">{request_data.get('plan_sku', '')}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #666;">MRP:</td><td style="padding: 8px 0;">₹{request_data.get('plan_mrp', 'N/A')}</td></tr>
+                </table>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+                <a href="{approve_url}" style="display: inline-block; background: #28a745; color: white; padding: 15px 40px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; margin: 10px;">APPROVE</a>
+                <a href="{decline_url}" style="display: inline-block; background: #dc3545; color: white; padding: 15px 40px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; margin: 10px;">DECLINE</a>
+            </div>
+            
+            <p style="text-align: center; color: #666; margin-top: 20px; font-size: 12px;">
+                You can also approve/decline from the <a href="{base_url}/admin">Admin Dashboard</a>
+            </p>
+        </div>
+        
+        <div style="background: #333; color: white; padding: 15px; text-align: center; font-size: 12px;">
+            <p style="margin: 0;">AppleCare+ Activation System | {settings.get('partner_name', 'Partner')}</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    msg.attach(MIMEText(html_body, 'html'))
+    
+    try:
+        await aiosmtplib.send(
+            msg,
+            recipients=[APPROVAL_EMAIL],
+            hostname=settings.get('smtp_host', 'smtp.gmail.com'),
+            port=settings.get('smtp_port', 587),
+            username=settings['smtp_email'],
+            password=settings['smtp_password'],
+            start_tls=True
+        )
+        logger.info(f"Approval email sent to {APPROVAL_EMAIL}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send approval email: {e}")
+        return False
+
 # ==================== TGME SUPPORT TICKET SERVICE ====================
 
 async def create_tgme_ticket(request_data: dict):
