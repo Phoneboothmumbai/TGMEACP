@@ -126,8 +126,9 @@ export default function Dashboard() {
   return (
     <DashboardLayout title="Dashboard">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-testid="stats-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8" data-testid="stats-grid">
         <StatCard title="Total Requests" value={stats.total} icon={FileText} color="bg-[#0071E3]" />
+        <StatCard title="Pending Approval" value={stats.pending_approval} icon={AlertCircle} color="bg-orange-500" />
         <StatCard title="Pending" value={stats.pending} icon={Clock} color="bg-amber-500" />
         <StatCard title="Payment Pending" value={stats.payment_pending} icon={CreditCard} color="bg-blue-500" />
         <StatCard title="Activated" value={stats.activated} icon={CheckCircle2} color="bg-green-500" />
