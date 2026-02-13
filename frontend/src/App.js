@@ -5,6 +5,7 @@ import Dashboard from "@/pages/Dashboard";
 import NewRequest from "@/pages/NewRequest";
 import Settings from "@/pages/Settings";
 import RequestDetail from "@/pages/RequestDetail";
+import PublicForm from "@/pages/PublicForm";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
@@ -28,9 +29,13 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public form - main landing page */}
+      <Route path="/" element={<PublicForm />} />
       <Route path="/login" element={<Login />} />
+      
+      {/* Protected admin routes */}
       <Route
-        path="/"
+        path="/admin"
         element={
           <ProtectedRoute>
             <Dashboard />
@@ -38,7 +43,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/new-request"
+        path="/admin/new-request"
         element={
           <ProtectedRoute>
             <NewRequest />
@@ -46,7 +51,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/settings"
+        path="/admin/settings"
         element={
           <ProtectedRoute>
             <Settings />
@@ -54,7 +59,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/request/:id"
+        path="/admin/request/:id"
         element={
           <ProtectedRoute>
             <RequestDetail />
