@@ -666,7 +666,6 @@ async def generate_invoice_pdf(request_data: dict, filename: str) -> str:
     # Bill To Section
     elements.append(Paragraph("<b>Bill To</b>", bold_style))
     customer_info = f"{request_data.get('customer_name', '')}<br/>"
-    customer_info += f"Phone: {request_data.get('customer_mobile', '')}<br/>"
     customer_info += f"Email: {request_data.get('customer_email', '')}"
     elements.append(Paragraph(customer_info, normal_style))
     elements.append(Spacer(1, 0.2*inch))
