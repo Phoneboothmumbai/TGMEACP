@@ -506,10 +506,8 @@ async def get_activation_request(request_id: str, user: dict = Depends(get_curre
 async def create_activation_request(
     data: ActivationRequestCreate,
     background_tasks: BackgroundTasks,
-    authorization: str = None
+    user: dict = Depends(get_current_user)
 ):
-    await get_current_user(authorization)
-    
     # Get plan details
     plan = await db.plans.find_one({"id": data.plan_id}, {"_id": 0})
     if not plan:
@@ -559,8 +557,7 @@ async def process_activation_request(request_id: str):
     )
 
 @api_router.put("/activation-requests/{request_id}/status")
-async def update_request_status(request_id: str, status: str, authorization: str = None):
-    await get_current_user(authorization)
+async def update_request_status(request_id: str, status: str, user: dict = Depends(get_current_user)):
     valid_statuses = ["pending", "email_sent", "payment_pending", "activated", "cancelled"]
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
@@ -574,8 +571,7 @@ async def update_request_status(request_id: str, status: str, authorization: str
     return {"message": "Status updated"}
 
 @api_router.post("/activation-requests/{request_id}/resend-email")
-async def resend_email(request_id: str, background_tasks: BackgroundTasks, authorization: str = None):
-    await get_current_user(authorization)
+async def resend_email(request_id: str, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
     req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
