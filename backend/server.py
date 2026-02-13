@@ -1225,7 +1225,7 @@ async def process_activation_request(request_id: str):
 
 @api_router.put("/activation-requests/{request_id}/status")
 async def update_request_status(request_id: str, status: str, user: dict = Depends(get_current_user)):
-    valid_statuses = ["pending", "email_sent", "payment_pending", "activated", "cancelled"]
+    valid_statuses = ["pending_approval", "pending", "email_sent", "payment_pending", "activated", "cancelled", "declined"]
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
     
@@ -1236,6 +1236,156 @@ async def update_request_status(request_id: str, status: str, user: dict = Depen
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Request not found")
     return {"message": "Status updated"}
+
+# ==================== APPROVAL WORKFLOW ENDPOINTS ====================
+
+@api_router.get("/activation-requests/{request_id}/approve-link")
+async def approve_via_link(request_id: str, token: str, background_tasks: BackgroundTasks):
+    """Approve request via email link"""
+    if not verify_approval_token(request_id, 'approve', token):
+        return HTMLResponse(content="""
+            <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #dc3545;">Invalid or Expired Link</h1>
+                <p>This approval link is invalid or has already been used.</p>
+            </body>
+            </html>
+        """, status_code=400)
+    
+    req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        return HTMLResponse(content="""
+            <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #dc3545;">Request Not Found</h1>
+                <p>The activation request was not found.</p>
+            </body>
+            </html>
+        """, status_code=404)
+    
+    if req.get('status') not in ['pending_approval', 'pending']:
+        return HTMLResponse(content=f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #ffc107;">Already Processed</h1>
+                <p>This request has already been processed. Current status: <strong>{req.get('status')}</strong></p>
+            </body>
+            </html>
+        """, status_code=200)
+    
+    # Update status to pending (approved, ready for processing)
+    await db.activation_requests.update_one(
+        {"id": request_id},
+        {"$set": {"status": "pending", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Process the request (create TGME ticket and send email to Apple)
+    background_tasks.add_task(process_activation_request, request_id)
+    
+    return HTMLResponse(content=f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto;">
+                <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
+                <h1 style="color: #28a745; margin-bottom: 15px;">Request Approved!</h1>
+                <p style="color: #666; margin-bottom: 20px;">The AppleCare+ activation request for <strong>{req.get('customer_name', '')}</strong> has been approved.</p>
+                <p style="color: #888; font-size: 14px;">A TGME ticket will be created and the activation email will be sent to Apple.</p>
+            </div>
+        </body>
+        </html>
+    """)
+
+@api_router.get("/activation-requests/{request_id}/decline-link")
+async def decline_via_link(request_id: str, token: str):
+    """Decline request via email link"""
+    if not verify_approval_token(request_id, 'decline', token):
+        return HTMLResponse(content="""
+            <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #dc3545;">Invalid or Expired Link</h1>
+                <p>This decline link is invalid or has already been used.</p>
+            </body>
+            </html>
+        """, status_code=400)
+    
+    req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        return HTMLResponse(content="""
+            <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #dc3545;">Request Not Found</h1>
+                <p>The activation request was not found.</p>
+            </body>
+            </html>
+        """, status_code=404)
+    
+    if req.get('status') not in ['pending_approval', 'pending']:
+        return HTMLResponse(content=f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #ffc107;">Already Processed</h1>
+                <p>This request has already been processed. Current status: <strong>{req.get('status')}</strong></p>
+            </body>
+            </html>
+        """, status_code=200)
+    
+    # Update status to declined
+    await db.activation_requests.update_one(
+        {"id": request_id},
+        {"$set": {"status": "declined", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return HTMLResponse(content=f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto;">
+                <div style="font-size: 60px; margin-bottom: 20px;">❌</div>
+                <h1 style="color: #dc3545; margin-bottom: 15px;">Request Declined</h1>
+                <p style="color: #666; margin-bottom: 20px;">The AppleCare+ activation request for <strong>{req.get('customer_name', '')}</strong> has been declined.</p>
+                <p style="color: #888; font-size: 14px;">No further action will be taken on this request.</p>
+            </div>
+        </body>
+        </html>
+    """)
+
+@api_router.post("/activation-requests/{request_id}/approve")
+async def approve_request_dashboard(request_id: str, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
+    """Approve request from dashboard"""
+    req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if req.get('status') not in ['pending_approval', 'pending']:
+        raise HTTPException(status_code=400, detail=f"Request cannot be approved. Current status: {req.get('status')}")
+    
+    # Update status to pending (approved, ready for processing)
+    await db.activation_requests.update_one(
+        {"id": request_id},
+        {"$set": {"status": "pending", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Process the request (create TGME ticket and send email to Apple)
+    background_tasks.add_task(process_activation_request, request_id)
+    
+    return {"message": "Request approved and processing started"}
+
+@api_router.post("/activation-requests/{request_id}/decline")
+async def decline_request_dashboard(request_id: str, user: dict = Depends(get_current_user)):
+    """Decline request from dashboard"""
+    req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if req.get('status') not in ['pending_approval', 'pending']:
+        raise HTTPException(status_code=400, detail=f"Request cannot be declined. Current status: {req.get('status')}")
+    
+    # Update status to declined
+    await db.activation_requests.update_one(
+        {"id": request_id},
+        {"$set": {"status": "declined", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": "Request declined"}
 
 @api_router.post("/activation-requests/{request_id}/resend-email")
 async def resend_email(request_id: str, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
