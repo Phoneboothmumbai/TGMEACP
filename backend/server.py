@@ -1,5 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header, Query
+from fastapi.responses import FileResponse, StreamingResponse, HTMLResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -28,6 +28,7 @@ from reportlab.lib.units import inch
 import io
 import openpyxl
 from openpyxl import Workbook
+import hashlib
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -40,6 +41,9 @@ db = client[os.environ['DB_NAME']]
 # JWT Secret
 JWT_SECRET = os.environ.get('JWT_SECRET', 'applecare-activation-secret-key-2025')
 JWT_ALGORITHM = "HS256"
+
+# Approval email recipient
+APPROVAL_EMAIL = "contact@thegoodmen.in"
 
 # Upload directory
 UPLOAD_DIR = ROOT_DIR / 'uploads'
