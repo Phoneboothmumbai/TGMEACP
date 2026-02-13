@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getSettings, updateSettings, getPlans, createPlan, updatePlan, deletePlan } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -32,8 +33,14 @@ import {
   Trash2, 
   Lock,
   Save,
-  RefreshCw
+  RefreshCw,
+  Upload,
+  Download,
+  FileSpreadsheet
 } from "lucide-react";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Settings() {
   const { changePassword } = useAuth();
@@ -52,9 +59,11 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
-  const [planForm, setPlanForm] = useState({ name: "", part_code: "", description: "" });
+  const [planForm, setPlanForm] = useState({ name: "", part_code: "", sku: "", description: "", mrp: "" });
   const [passwordForm, setPasswordForm] = useState({ current: "", new: "", confirm: "" });
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -90,15 +99,19 @@ export default function Settings() {
 
   const handlePlanSubmit = async () => {
     try {
+      const submitData = {
+        ...planForm,
+        mrp: planForm.mrp ? parseFloat(planForm.mrp) : null
+      };
       if (editingPlan) {
-        await updatePlan(editingPlan.id, planForm);
+        await updatePlan(editingPlan.id, submitData);
         toast.success("Plan updated");
       } else {
-        await createPlan(planForm);
+        await createPlan(submitData);
         toast.success("Plan created");
       }
       setPlanDialogOpen(false);
-      setPlanForm({ name: "", part_code: "", description: "" });
+      setPlanForm({ name: "", part_code: "", sku: "", description: "", mrp: "" });
       setEditingPlan(null);
       fetchData();
     } catch (error) {
@@ -137,14 +150,73 @@ export default function Settings() {
 
   const openEditPlan = (plan) => {
     setEditingPlan(plan);
-    setPlanForm({ name: plan.name, part_code: plan.part_code, description: plan.description || "" });
+    setPlanForm({ 
+      name: plan.name || "", 
+      part_code: plan.part_code || "", 
+      sku: plan.sku || "", 
+      description: plan.description || "",
+      mrp: plan.mrp ? plan.mrp.toString() : ""
+    });
     setPlanDialogOpen(true);
   };
 
   const openNewPlan = () => {
     setEditingPlan(null);
-    setPlanForm({ name: "", part_code: "", description: "" });
+    setPlanForm({ name: "", part_code: "", sku: "", description: "", mrp: "" });
     setPlanDialogOpen(true);
+  };
+
+  const handleExcelUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error("Please upload an Excel file (.xlsx or .xls)");
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_URL}/api/plans/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      toast.success(`Successfully uploaded ${response.data.imported_count} plans`);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to upload plans");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const downloadSampleFile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/plans/sample`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'applecare_plans_sample.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Failed to download sample file");
+    }
   };
 
   const InputField = ({ icon: Icon, label, id, ...props }) => (
@@ -180,8 +252,8 @@ export default function Settings() {
           <TabsTrigger value="email" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
             Email Configuration
           </TabsTrigger>
-          <TabsTrigger value="osticket" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            osTicket
+          <TabsTrigger value="tgme" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            TGME Support Ticket
           </TabsTrigger>
           <TabsTrigger value="plans" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
             AppleCare+ Plans
@@ -201,16 +273,22 @@ export default function Settings() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Mail}
-                  label="Apple Email (Recipient)"
-                  id="apple_email"
-                  type="email"
-                  value={settings.apple_email}
-                  onChange={(e) => setSettings({ ...settings, apple_email: e.target.value })}
-                  placeholder="apple-activations@apple.com"
-                  data-testid="apple-email-input"
-                />
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Apple Email IDs (Recipients)
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 w-5 h-5 text-[#86868B]" />
+                    <Textarea
+                      value={settings.apple_email}
+                      onChange={(e) => setSettings({ ...settings, apple_email: e.target.value })}
+                      placeholder="Enter email addresses separated by commas&#10;e.g., apple1@apple.com, apple2@apple.com"
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg min-h-[80px] resize-none"
+                      data-testid="apple-email-input"
+                    />
+                  </div>
+                  <p className="text-xs text-[#86868B]">Separate multiple email addresses with commas</p>
+                </div>
                 <InputField
                   icon={Building2}
                   label="Partner Name"
@@ -284,34 +362,34 @@ export default function Settings() {
           </div>
         </TabsContent>
 
-        {/* osTicket Configuration */}
-        <TabsContent value="osticket">
-          <div className="bg-white border border-[#D2D2D7]/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-6" data-testid="osticket-settings-card">
+        {/* TGME Support Ticket Configuration */}
+        <TabsContent value="tgme">
+          <div className="bg-white border border-[#D2D2D7]/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-6" data-testid="tgme-settings-card">
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-[#1D1D1F] font-['Plus_Jakarta_Sans']">osTicket Configuration</h3>
-                <p className="text-sm text-[#86868B] mt-1">Configure osTicket API for automatic ticket creation</p>
+                <h3 className="text-lg font-semibold text-[#1D1D1F] font-['Plus_Jakarta_Sans']">TGME Support Ticket Configuration</h3>
+                <p className="text-sm text-[#86868B] mt-1">Configure TGME Support Ticket API for automatic ticket creation</p>
               </div>
 
               <div className="space-y-4">
                 <InputField
                   icon={Server}
-                  label="osTicket URL"
+                  label="TGME Support Ticket URL"
                   id="osticket_url"
                   value={settings.osticket_url}
                   onChange={(e) => setSettings({ ...settings, osticket_url: e.target.value })}
-                  placeholder="https://your-osticket.com"
-                  data-testid="osticket-url-input"
+                  placeholder="https://your-support-ticket.com"
+                  data-testid="tgme-url-input"
                 />
                 <InputField
                   icon={Key}
-                  label="osTicket API Key"
+                  label="TGME Support Ticket API Key"
                   id="osticket_api_key"
                   type="password"
                   value={settings.osticket_api_key}
                   onChange={(e) => setSettings({ ...settings, osticket_api_key: e.target.value })}
                   placeholder="Enter API key"
-                  data-testid="osticket-api-key-input"
+                  data-testid="tgme-api-key-input"
                 />
               </div>
 
@@ -320,7 +398,7 @@ export default function Settings() {
                   onClick={handleSettingsSave}
                   disabled={saving}
                   className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-6 gap-2"
-                  data-testid="save-osticket-settings-btn"
+                  data-testid="save-tgme-settings-btn"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? "Saving..." : "Save Settings"}
@@ -333,129 +411,199 @@ export default function Settings() {
         {/* Plans Management */}
         <TabsContent value="plans">
           <div className="bg-white border border-[#D2D2D7]/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden" data-testid="plans-settings-card">
-            <div className="flex items-center justify-between p-6 border-b border-[#E8E8ED]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-[#E8E8ED]">
               <div>
                 <h3 className="text-lg font-semibold text-[#1D1D1F] font-['Plus_Jakarta_Sans']">AppleCare+ Plans</h3>
                 <p className="text-sm text-[#86868B] mt-1">Manage available AppleCare+ plans</p>
               </div>
-              <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    onClick={openNewPlan}
-                    className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-5 gap-2"
-                    data-testid="add-plan-btn"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Plan
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingPlan ? "Edit Plan" : "Add New Plan"}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-                        Plan Name
-                      </Label>
-                      <Input
-                        value={planForm.name}
-                        onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
-                        placeholder="e.g., AppleCare+ for iPhone"
-                        className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3]"
-                        data-testid="plan-name-input"
-                      />
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  onClick={downloadSampleFile}
+                  className="rounded-full px-4 gap-2 text-sm"
+                  data-testid="download-sample-btn"
+                >
+                  <Download className="w-4 h-4" />
+                  Sample
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelUpload}
+                  className="hidden"
+                  data-testid="excel-upload-input"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="rounded-full px-4 gap-2 text-sm"
+                  data-testid="upload-excel-btn"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  {uploading ? "Uploading..." : "Upload Excel"}
+                </Button>
+                <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      onClick={openNewPlan}
+                      className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-5 gap-2"
+                      data-testid="add-plan-btn"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Plan
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>{editingPlan ? "Edit Plan" : "Add New Plan"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                            SKU
+                          </Label>
+                          <Input
+                            value={planForm.sku}
+                            onChange={(e) => setPlanForm({ ...planForm, sku: e.target.value })}
+                            placeholder="e.g., S9732ZM/A"
+                            className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3] font-mono"
+                            data-testid="plan-sku-input"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                            Part Code
+                          </Label>
+                          <Input
+                            value={planForm.part_code}
+                            onChange={(e) => setPlanForm({ ...planForm, part_code: e.target.value })}
+                            placeholder="e.g., SR182HN/A"
+                            className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3] font-mono"
+                            data-testid="plan-partcode-input"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                          Plan Name
+                        </Label>
+                        <Input
+                          value={planForm.name}
+                          onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
+                          placeholder="e.g., AppleCare+ for iPhone"
+                          className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3]"
+                          data-testid="plan-name-input"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                          Description
+                        </Label>
+                        <Input
+                          value={planForm.description}
+                          onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })}
+                          placeholder="Plan description"
+                          className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3]"
+                          data-testid="plan-description-input"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                          MRP (₹)
+                        </Label>
+                        <Input
+                          type="number"
+                          value={planForm.mrp}
+                          onChange={(e) => setPlanForm({ ...planForm, mrp: e.target.value })}
+                          placeholder="e.g., 14900"
+                          className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3]"
+                          data-testid="plan-mrp-input"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-3 pt-4">
+                        <Button variant="ghost" onClick={() => setPlanDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handlePlanSubmit}
+                          className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-6"
+                          data-testid="save-plan-btn"
+                        >
+                          {editingPlan ? "Update" : "Create"}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-                        Part Code
-                      </Label>
-                      <Input
-                        value={planForm.part_code}
-                        onChange={(e) => setPlanForm({ ...planForm, part_code: e.target.value })}
-                        placeholder="e.g., SR182HN/A"
-                        className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3] font-mono"
-                        data-testid="plan-partcode-input"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-                        Description
-                      </Label>
-                      <Input
-                        value={planForm.description}
-                        onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })}
-                        placeholder="Optional description"
-                        className="bg-[#F5F5F7] border-transparent focus:border-[#0071E3]"
-                        data-testid="plan-description-input"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                      <Button variant="ghost" onClick={() => setPlanDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handlePlanSubmit}
-                        className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-6"
-                        data-testid="save-plan-btn"
-                      >
-                        {editingPlan ? "Update" : "Create"}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             <Table>
               <TableHeader>
                 <TableRow className="bg-[#F5F5F7] hover:bg-[#F5F5F7]">
-                  <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Plan Name</TableHead>
-                  <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Part Code</TableHead>
+                  <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">SKU</TableHead>
                   <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Description</TableHead>
+                  <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">MRP</TableHead>
+                  <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Part Code</TableHead>
                   <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Status</TableHead>
                   <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {plans.map((plan) => (
-                  <TableRow key={plan.id} className="border-b border-[#E8E8ED] hover:bg-[#F5F5F7]/50" data-testid={`plan-row-${plan.id}`}>
-                    <TableCell className="font-medium text-[#1D1D1F]">{plan.name}</TableCell>
-                    <TableCell>
-                      <code className="font-mono text-sm bg-[#F5F5F7] px-2 py-1 rounded">{plan.part_code}</code>
+                {plans.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-[#86868B]">
+                      No plans found. Add a new plan or upload an Excel file.
                     </TableCell>
-                    <TableCell className="text-[#86868B]">{plan.description || "-"}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                        {plan.active ? "Active" : "Inactive"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditPlan(plan)}
-                          className="hover:bg-[#F5F5F7]"
-                          data-testid={`edit-plan-${plan.id}`}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        {plan.active && (
+                  </TableRow>
+                ) : (
+                  plans.map((plan) => (
+                    <TableRow key={plan.id} className="border-b border-[#E8E8ED] hover:bg-[#F5F5F7]/50" data-testid={`plan-row-${plan.id}`}>
+                      <TableCell>
+                        <code className="font-mono text-sm bg-[#F5F5F7] px-2 py-1 rounded">{plan.sku || plan.part_code}</code>
+                      </TableCell>
+                      <TableCell className="text-[#1D1D1F] max-w-xs truncate">{plan.description || plan.name}</TableCell>
+                      <TableCell className="text-[#1D1D1F] font-medium">
+                        {plan.mrp ? `₹${plan.mrp.toLocaleString('en-IN')}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <code className="font-mono text-xs text-[#86868B]">{plan.part_code}</code>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                          {plan.active ? "Active" : "Inactive"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handlePlanDelete(plan.id)}
-                            className="hover:bg-red-50 text-red-500"
-                            data-testid={`delete-plan-${plan.id}`}
+                            onClick={() => openEditPlan(plan)}
+                            className="hover:bg-[#F5F5F7]"
+                            data-testid={`edit-plan-${plan.id}`}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {plan.active && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePlanDelete(plan.id)}
+                              className="hover:bg-red-50 text-red-500"
+                              data-testid={`delete-plan-${plan.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
