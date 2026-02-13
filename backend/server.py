@@ -829,7 +829,7 @@ async def generate_invoice_pdf(request_data: dict, filename: str) -> str:
 
 # ==================== EMAIL SERVICE ====================
 
-async def send_activation_email(request_data: dict, invoice_path: Optional[str] = None):
+async def send_activation_email(request_data: dict, invoice_path: Optional[str] = None, ticket_id: Optional[str] = None):
     settings = await db.settings.find_one({"id": "main_settings"}, {"_id": 0})
     if not settings or not settings.get('smtp_email') or not settings.get('apple_email'):
         logger.warning("Email settings not configured")
@@ -844,7 +844,13 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
     msg = MIMEMultipart()
     msg['From'] = settings['smtp_email']
     msg['To'] = ', '.join(apple_emails)  # Join multiple recipients
-    msg['Subject'] = f"AppleCare+ Activation Request - {request_data.get('customer_name', 'Customer')}"
+    
+    # Email subject format: AppleCare+ for (Customer name) #(OSTICKETID)
+    customer_name = request_data.get('customer_name', 'Customer')
+    if ticket_id:
+        msg['Subject'] = f"AppleCare+ for {customer_name} #{ticket_id}"
+    else:
+        msg['Subject'] = f"AppleCare+ for {customer_name}"
     
     # Build email body with tabular format
     html_body = f"""
