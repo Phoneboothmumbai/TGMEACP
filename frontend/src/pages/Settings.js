@@ -47,6 +47,7 @@ export default function Settings() {
   
   // Individual state for each settings field to prevent re-render issues
   const [appleEmail, setAppleEmail] = useState("");
+  const [approvalEmail, setApprovalEmail] = useState("");
   const [smtpHost, setSmtpHost] = useState("smtp.gmail.com");
   const [smtpPort, setSmtpPort] = useState(587);
   const [smtpEmail, setSmtpEmail] = useState("");
