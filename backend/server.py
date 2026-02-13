@@ -929,32 +929,53 @@ async def create_tgme_ticket(request_data: dict):
         logger.warning("TGME Support Ticket settings not configured")
         return None
     
+    # Build comprehensive ticket body with ALL form details
+    ticket_body = f"""
+================================================================================
+                        AppleCare+ ACTIVATION REQUEST
+================================================================================
+
+DEALER INFORMATION (Ticket Raised By)
+--------------------------------------------------------------------------------
+Dealer Name:          {request_data.get('dealer_name', '')}
+Dealer Email:         {request_data.get('dealer_email', '')}
+Dealer Mobile:        {request_data.get('dealer_mobile', '')}
+
+CUSTOMER INFORMATION
+--------------------------------------------------------------------------------
+Customer Name:        {request_data.get('customer_name', '')}
+Customer Email:       {request_data.get('customer_email', '')}
+Customer Mobile:      {request_data.get('customer_mobile', '')}
+
+DEVICE INFORMATION
+--------------------------------------------------------------------------------
+Model ID:             {request_data.get('model_id', '')}
+Serial Number/IMEI:   {request_data.get('serial_number', '')}
+Activation Date:      {request_data.get('device_activation_date', '')}
+
+APPLECARE+ PLAN DETAILS
+--------------------------------------------------------------------------------
+Plan Name:            {request_data.get('plan_name', '')}
+Plan SKU:             {request_data.get('plan_sku', '')}
+Plan Part Code:       {request_data.get('plan_part_code', '')}
+Plan MRP:             ₹{request_data.get('plan_mrp', 'N/A')}
+
+INTERNAL REFERENCE
+--------------------------------------------------------------------------------
+Billing Location:     {request_data.get('billing_location', 'F9B4869273B7')}
+Payment Type:         {request_data.get('payment_type', 'Insta')}
+Request ID:           {request_data.get('id', '')}
+
+================================================================================
+"""
+    
     # Use DEALER details for ticket creation (not customer)
     ticket_data = {
         "name": request_data.get('dealer_name', ''),
         "email": request_data.get('dealer_email', ''),
         "phone": request_data.get('dealer_mobile', ''),
-        "subject": f"AppleCare+ Activation - {request_data.get('serial_number', '')}",
-        "message": f"""
-AppleCare+ Activation Request
-
-Dealer Details:
-- Name: {request_data.get('dealer_name', '')}
-- Email: {request_data.get('dealer_email', '')}
-- Mobile: {request_data.get('dealer_mobile', '')}
-
-Customer Details:
-- Name: {request_data.get('customer_name', '')}
-- Email: {request_data.get('customer_email', '')}
-- Mobile: {request_data.get('customer_mobile', '')}
-
-Device Details:
-- Model ID: {request_data.get('model_id', '')}
-- Serial Number: {request_data.get('serial_number', '')}
-- Activation Date: {request_data.get('device_activation_date', '')}
-
-Plan: {request_data.get('plan_name', '')} ({request_data.get('plan_part_code', '')})
-        """,
+        "subject": f"AppleCare+ Activation - {request_data.get('customer_name', '')} - {request_data.get('serial_number', '')}",
+        "message": ticket_body,
         "topicId": "1"
     }
     
