@@ -442,40 +442,384 @@ async def update_settings(data: SettingsUpdate, user: dict = Depends(get_current
 
 # ==================== PDF GENERATION ====================
 
+import random
+import string
+
+# Indian mobile shop names for realistic invoices
+SHOP_NAMES = [
+    "TechZone Mobile Hub",
+    "Digital Dreams Electronics",
+    "Mobile Planet India",
+    "SmartCell Solutions",
+    "iWorld Mobile Store",
+    "Galaxy Tech Mart",
+    "Prime Mobile House",
+    "Supreme Electronics",
+    "NextGen Mobile Shop",
+    "City Mobile Center",
+    "Metro Tech Store",
+    "Royal Mobile Emporium",
+    "Star Mobile Point",
+    "Express Mobile Mart",
+    "Horizon Electronics"
+]
+
+# Indian addresses for realistic invoices
+SHOP_ADDRESSES = [
+    {"address": "Shop 12, Linking Road, Bandra West", "city": "Mumbai", "pin": "400050", "state": "27-Maharashtra", "phone": "9820098200"},
+    {"address": "45, MG Road, Camp Area", "city": "Pune", "pin": "411001", "state": "27-Maharashtra", "phone": "9890123456"},
+    {"address": "23, Brigade Road, Near Commercial Street", "city": "Bangalore", "pin": "560001", "state": "29-Karnataka", "phone": "9845012345"},
+    {"address": "F-15, Connaught Place, Block F", "city": "New Delhi", "pin": "110001", "state": "07-Delhi", "phone": "9811234567"},
+    {"address": "Shop 8, Anna Salai, Opposite Express Avenue", "city": "Chennai", "pin": "600002", "state": "33-Tamil Nadu", "phone": "9841234567"},
+    {"address": "102, CG Road, Navrangpura", "city": "Ahmedabad", "pin": "380009", "state": "24-Gujarat", "phone": "9825678901"},
+    {"address": "28, Park Street, Near Park Circus", "city": "Kolkata", "pin": "700017", "state": "19-West Bengal", "phone": "9830123456"},
+    {"address": "5, Sector 17, Plaza Market", "city": "Chandigarh", "pin": "160017", "state": "04-Chandigarh", "phone": "9815012345"},
+    {"address": "Shop 33, Hazratganj, Main Road", "city": "Lucknow", "pin": "226001", "state": "09-Uttar Pradesh", "phone": "9839012345"},
+    {"address": "201, MI Road, Near Statue Circle", "city": "Jaipur", "pin": "302001", "state": "08-Rajasthan", "phone": "9829012345"}
+]
+
+# Product pricing based on AppleCare+ plan description
+PRODUCT_PRICING = {
+    "macbook air": {"name": "MacBook Air", "price": 80000},
+    "macbook pro": {"name": "MacBook Pro", "price": 169900},
+    "iphone": {"name": "iPhone", "price": 79900},
+    "iphone pro": {"name": "iPhone Pro", "price": 134900},
+    "iphone pro max": {"name": "iPhone Pro Max", "price": 149900},
+    "ipad": {"name": "iPad", "price": 39900},
+    "ipad air": {"name": "iPad Air", "price": 59900},
+    "ipad pro": {"name": "iPad Pro", "price": 89900},
+    "imac": {"name": "iMac", "price": 134900},
+    "apple watch": {"name": "Apple Watch", "price": 44900},
+    "apple watch ultra": {"name": "Apple Watch Ultra", "price": 89900},
+    "airpods": {"name": "AirPods", "price": 14900},
+    "airpods pro": {"name": "AirPods Pro", "price": 24900}
+}
+
+def detect_product_from_plan(plan_name: str, plan_description: str) -> dict:
+    """Detect the Apple product from the AppleCare+ plan name/description"""
+    combined = (plan_name + " " + plan_description).lower()
+    
+    # Check for specific products (order matters - more specific first)
+    if "pro max" in combined and "iphone" in combined:
+        return PRODUCT_PRICING["iphone pro max"]
+    elif "iphone" in combined and "pro" in combined:
+        return PRODUCT_PRICING["iphone pro"]
+    elif "iphone" in combined:
+        return PRODUCT_PRICING["iphone"]
+    elif "macbook pro" in combined or "mac pro" in combined:
+        return PRODUCT_PRICING["macbook pro"]
+    elif "macbook air" in combined or "mac air" in combined:
+        return PRODUCT_PRICING["macbook air"]
+    elif "macbook" in combined or "mac" in combined:
+        return PRODUCT_PRICING["macbook air"]  # Default Mac
+    elif "ipad pro" in combined:
+        return PRODUCT_PRICING["ipad pro"]
+    elif "ipad air" in combined:
+        return PRODUCT_PRICING["ipad air"]
+    elif "ipad" in combined:
+        return PRODUCT_PRICING["ipad"]
+    elif "imac" in combined:
+        return PRODUCT_PRICING["imac"]
+    elif "watch ultra" in combined:
+        return PRODUCT_PRICING["apple watch ultra"]
+    elif "watch" in combined:
+        return PRODUCT_PRICING["apple watch"]
+    elif "airpods pro" in combined:
+        return PRODUCT_PRICING["airpods pro"]
+    elif "airpods" in combined:
+        return PRODUCT_PRICING["airpods"]
+    else:
+        # Default to iPhone if can't detect
+        return PRODUCT_PRICING["iphone"]
+
+def num_to_words_indian(num: int) -> str:
+    """Convert number to Indian currency words"""
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+            "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+    
+    if num == 0:
+        return "Zero"
+    
+    def two_digits(n):
+        if n < 20:
+            return ones[n]
+        return tens[n // 10] + (" " + ones[n % 10] if n % 10 else "")
+    
+    def three_digits(n):
+        if n < 100:
+            return two_digits(n)
+        return ones[n // 100] + " Hundred" + (" " + two_digits(n % 100) if n % 100 else "")
+    
+    result = ""
+    if num >= 10000000:  # Crore
+        result += three_digits(num // 10000000) + " Crore "
+        num %= 10000000
+    if num >= 100000:  # Lakh
+        result += two_digits(num // 100000) + " Lakh "
+        num %= 100000
+    if num >= 1000:  # Thousand
+        result += two_digits(num // 1000) + " Thousand "
+        num %= 1000
+    if num >= 100:  # Hundred
+        result += ones[num // 100] + " Hundred "
+        num %= 100
+    if num > 0:
+        result += two_digits(num)
+    
+    return result.strip()
+
+def format_indian_currency(amount: float) -> str:
+    """Format amount in Indian currency format (e.g., 1,70,800.00)"""
+    amount_str = f"{amount:,.2f}"
+    parts = amount_str.split(".")
+    integer_part = parts[0].replace(",", "")
+    decimal_part = parts[1] if len(parts) > 1 else "00"
+    
+    # Indian numbering system
+    if len(integer_part) <= 3:
+        formatted = integer_part
+    else:
+        formatted = integer_part[-3:]
+        integer_part = integer_part[:-3]
+        while integer_part:
+            formatted = integer_part[-2:] + "," + formatted
+            integer_part = integer_part[:-2]
+    
+    return f"₹ {formatted}.{decimal_part}"
+
 async def generate_invoice_pdf(request_data: dict, filename: str) -> str:
     filepath = INVOICE_DIR / filename
     
-    doc = SimpleDocTemplate(str(filepath), pagesize=letter)
+    # Random shop details
+    shop_name = random.choice(SHOP_NAMES)
+    shop_addr = random.choice(SHOP_ADDRESSES)
+    invoice_number = ''.join(random.choices(string.digits, k=4))
+    
+    # Get activation date for invoice date
+    invoice_date = request_data.get('device_activation_date', datetime.now().strftime("%d-%m-%Y"))
+    if "-" in invoice_date and len(invoice_date.split("-")[0]) == 4:
+        # Convert from YYYY-MM-DD to DD-MM-YYYY
+        parts = invoice_date.split("-")
+        invoice_date = f"{parts[2]}-{parts[1]}-{parts[0]}"
+    
+    # Detect product from AppleCare+ plan
+    plan_name = request_data.get('plan_name', '')
+    plan_description = request_data.get('plan_description', plan_name)
+    product_info = detect_product_from_plan(plan_name, plan_description)
+    
+    # Get AppleCare+ price (MRP)
+    applecare_price = request_data.get('plan_mrp', 0) or 14900  # Default AppleCare+ price
+    product_price = product_info["price"]
+    
+    # Calculate tax (18% GST inclusive)
+    # For inclusive GST: Base = Total / 1.18, GST = Total - Base
+    product_base = round(product_price / 1.18, 2)
+    product_gst = round(product_price - product_base, 2)
+    
+    applecare_base = round(applecare_price / 1.18, 2)
+    applecare_gst = round(applecare_price - applecare_base, 2)
+    
+    total_amount = product_price + applecare_price
+    total_base = product_base + applecare_base
+    total_gst = product_gst + applecare_gst
+    cgst = round(total_gst / 2, 2)
+    sgst = round(total_gst / 2, 2)
+    
+    # Create PDF
+    doc = SimpleDocTemplate(str(filepath), pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
     elements = []
     styles = getSampleStyleSheet()
     
-    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=20)
-    elements.append(Paragraph("AppleCare+ Activation Invoice", title_style))
-    elements.append(Spacer(1, 0.25 * inch))
+    # Custom styles
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#1a1a1a'), spaceAfter=5)
+    header_style = ParagraphStyle('Header', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#666666'))
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, fontName='Helvetica-Bold')
+    normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontSize=9)
+    small_style = ParagraphStyle('Small', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#666666'))
     
-    info_data = [
-        ["Customer Name:", request_data.get('customer_name', '')],
-        ["Customer Email:", request_data.get('customer_email', '')],
-        ["Customer Mobile:", request_data.get('customer_mobile', '')],
-        ["Dealer Name:", request_data.get('dealer_name', '')],
-        ["Dealer Mobile:", request_data.get('dealer_mobile', '')],
-        ["Model ID:", request_data.get('model_id', '')],
-        ["Serial Number:", request_data.get('serial_number', '')],
-        ["Plan:", request_data.get('plan_name', '')],
-        ["Plan Code:", request_data.get('plan_part_code', '')],
-        ["Activation Date:", request_data.get('device_activation_date', '')],
-        ["Invoice Date:", datetime.now().strftime("%Y-%m-%d")],
+    # Header Section - Company Info and Sale Order
+    header_data = [
+        [
+            [
+                Paragraph(f"<b>{shop_name}</b>", title_style),
+                Paragraph(f"{shop_addr['address']}<br/>{shop_addr['city']}, {shop_addr['pin']}<br/>Phone: {shop_addr['phone']}<br/>State: {shop_addr['state']}", header_style)
+            ],
+            [
+                Paragraph("<b>Sale Order</b>", ParagraphStyle('SO', parent=styles['Heading2'], fontSize=14, alignment=2)),
+                Paragraph(f"<b>Invoice No:</b> {invoice_number}<br/><b>Date:</b> {invoice_date}", ParagraphStyle('SODetails', parent=styles['Normal'], fontSize=9, alignment=2))
+            ]
+        ]
     ]
     
-    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
-    info_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
+    header_table = Table(header_data, colWidths=[4*inch, 3*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
     ]))
-    elements.append(info_table)
+    elements.append(header_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Bill To Section
+    elements.append(Paragraph("<b>Bill To</b>", bold_style))
+    customer_info = f"{request_data.get('customer_name', '')}<br/>"
+    customer_info += f"Phone: {request_data.get('customer_mobile', '')}<br/>"
+    customer_info += f"Email: {request_data.get('customer_email', '')}"
+    elements.append(Paragraph(customer_info, normal_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Product Table
+    product_table_data = [
+        ["Item name", "HSN/SAC", "Qty", "Price/Unit", "GST", "Amount"]
+    ]
+    
+    # Product row
+    serial_no = request_data.get('serial_number', '')
+    product_name_with_serial = f"<b>{product_info['name'].upper()}</b><br/><font size=7>Serial No.: {serial_no}</font>"
+    product_table_data.append([
+        Paragraph(product_name_with_serial, normal_style),
+        "85171290",  # HSN code for mobile phones
+        "1",
+        format_indian_currency(product_base),
+        f"{format_indian_currency(product_gst)}\n(18%)",
+        format_indian_currency(product_price)
+    ])
+    
+    # AppleCare+ row
+    applecare_name = plan_name if plan_name else f"AppleCare+ for {product_info['name']}"
+    product_table_data.append([
+        Paragraph(f"<b>{applecare_name}</b>", normal_style),
+        "998716",  # SAC code for warranty services
+        "1",
+        format_indian_currency(applecare_base),
+        f"{format_indian_currency(applecare_gst)}\n(18%)",
+        format_indian_currency(applecare_price)
+    ])
+    
+    # Total row
+    product_table_data.append([
+        "", "", "", "Total",
+        format_indian_currency(total_gst),
+        format_indian_currency(total_amount)
+    ])
+    
+    product_table = Table(product_table_data, colWidths=[2.5*inch, 0.8*inch, 0.5*inch, 1.2*inch, 1*inch, 1.2*inch])
+    product_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f5f5f5')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('FONTNAME', (3, -1), (3, -1), 'Helvetica-Bold'),
+    ]))
+    elements.append(product_table)
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Amount in words
+    amount_words = num_to_words_indian(int(total_amount))
+    elements.append(Paragraph(f"<b>Invoice Amount in Words:</b> {amount_words} Rupees only", normal_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Amount Summary
+    amount_summary_data = [
+        ["Total:", format_indian_currency(total_amount)],
+        ["Received:", format_indian_currency(0)],
+        ["Balance:", format_indian_currency(total_amount)]
+    ]
+    
+    amount_summary = Table(amount_summary_data, colWidths=[1*inch, 1.5*inch])
+    amount_summary.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+    ]))
+    elements.append(amount_summary)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Tax Breakdown
+    elements.append(Paragraph("<b>Tax Breakdown</b>", bold_style))
+    tax_data = [
+        ["HSN/SAC", "Taxable Amt", "CGST Rate", "CGST Amt", "SGST Rate", "SGST Amt", "Total Tax"]
+    ]
+    
+    # Product tax
+    tax_data.append([
+        "85171290",
+        format_indian_currency(product_base),
+        "9%",
+        format_indian_currency(product_gst / 2),
+        "9%",
+        format_indian_currency(product_gst / 2),
+        format_indian_currency(product_gst)
+    ])
+    
+    # AppleCare+ tax
+    tax_data.append([
+        "998716",
+        format_indian_currency(applecare_base),
+        "9%",
+        format_indian_currency(applecare_gst / 2),
+        "9%",
+        format_indian_currency(applecare_gst / 2),
+        format_indian_currency(applecare_gst)
+    ])
+    
+    # Tax totals
+    tax_data.append([
+        "Total",
+        format_indian_currency(total_base),
+        "",
+        format_indian_currency(cgst),
+        "",
+        format_indian_currency(sgst),
+        format_indian_currency(total_gst)
+    ])
+    
+    tax_table = Table(tax_data, colWidths=[0.8*inch, 1.1*inch, 0.7*inch, 0.9*inch, 0.7*inch, 0.9*inch, 0.9*inch])
+    tax_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f5f5f5')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
+        ('ALIGN', (3, 1), (3, -1), 'RIGHT'),
+        ('ALIGN', (5, 1), (5, -1), 'RIGHT'),
+        ('ALIGN', (6, 1), (6, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+    ]))
+    elements.append(tax_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Footer
+    elements.append(Paragraph("<b>Terms and conditions</b>", bold_style))
+    elements.append(Paragraph("Thanks for doing business with us!", small_style))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Authorized Signatory
+    footer_data = [
+        ["", f"For {shop_name}"],
+        ["", ""],
+        ["", ""],
+        ["", "Authorized Signatory"]
+    ]
+    footer_table = Table(footer_data, colWidths=[4.5*inch, 2.5*inch])
+    footer_table.setStyle(TableStyle([
+        ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('FONTNAME', (1, 0), (1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (1, -1), (1, -1), 'Helvetica'),
+    ]))
+    elements.append(footer_table)
     
     doc.build(elements)
     return str(filepath)
