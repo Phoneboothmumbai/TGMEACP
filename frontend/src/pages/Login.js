@@ -71,7 +71,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@applecare.com"
+                  placeholder="Enter your email"
                   className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-12"
                   required
                   data-testid="login-email-input"
@@ -117,13 +117,6 @@ export default function Login() {
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-
-          {/* Default credentials hint */}
-          <div className="mt-6 p-4 bg-[#F5F5F7] rounded-lg">
-            <p className="text-xs text-[#86868B] text-center">
-              Default credentials: <span className="font-mono text-[#1D1D1F]">admin@applecare.com</span> / <span className="font-mono text-[#1D1D1F]">admin123</span>
-            </p>
-          </div>
         </div>
       </div>
     </div>
