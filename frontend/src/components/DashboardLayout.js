@@ -49,7 +49,7 @@ export default function DashboardLayout({ children, title }) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-[#D2D2D7]">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/admin" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#0071E3] flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">AC+</span>
               </div>
