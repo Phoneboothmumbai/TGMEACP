@@ -1,5 +1,4 @@
-import { useState, useEffect, memo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,27 +35,7 @@ import axios from "axios";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// InputField component defined OUTSIDE to prevent re-creation on each render
-const InputField = memo(({ icon: Icon, label, id, value, onChange, ...props }) => (
-  <div className="space-y-2">
-    <Label htmlFor={id} className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
-      {label}
-    </Label>
-    <div className="relative">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
-      <Input
-        id={id}
-        value={value}
-        onChange={onChange}
-        className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
-        {...props}
-      />
-    </div>
-  </div>
-));
-
 export default function PublicForm() {
-  const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
@@ -64,17 +43,17 @@ export default function PublicForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
 
-  const [formData, setFormData] = useState({
-    dealer_name: "",
-    dealer_mobile: "",
-    customer_name: "",
-    customer_mobile: "",
-    customer_email: "",
-    model_id: "",
-    serial_number: "",
-    plan_id: "",
-    device_activation_date: null,
-  });
+  // Use individual state for each field to prevent full form re-render
+  const [dealerName, setDealerName] = useState("");
+  const [dealerMobile, setDealerMobile] = useState("");
+  const [dealerEmail, setDealerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerMobile, setCustomerMobile] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [modelId, setModelId] = useState("");
+  const [serialNumber, setSerialNumber] = useState("");
+  const [planId, setPlanId] = useState("");
+  const [activationDate, setActivationDate] = useState(null);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -88,19 +67,15 @@ export default function PublicForm() {
     fetchPlans();
   }, []);
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.plan_id) {
+    if (!planId) {
       toast.error("Please select an AppleCare+ plan");
       return;
     }
     
-    if (!formData.device_activation_date) {
+    if (!activationDate) {
       toast.error("Please select the device activation date");
       return;
     }
@@ -108,8 +83,16 @@ export default function PublicForm() {
     setLoading(true);
     try {
       const submitData = {
-        ...formData,
-        device_activation_date: format(formData.device_activation_date, "yyyy-MM-dd"),
+        dealer_name: dealerName,
+        dealer_mobile: dealerMobile,
+        dealer_email: dealerEmail,
+        customer_name: customerName,
+        customer_mobile: customerMobile,
+        customer_email: customerEmail,
+        model_id: modelId,
+        serial_number: serialNumber,
+        plan_id: planId,
+        device_activation_date: format(activationDate, "yyyy-MM-dd"),
       };
       const response = await axios.post(`${API_URL}/api/activation-requests`, submitData);
       setSubmittedData(response.data);
@@ -122,7 +105,21 @@ export default function PublicForm() {
     }
   };
 
-  const selectedPlan = plans.find((p) => p.id === formData.plan_id);
+  const resetForm = useCallback(() => {
+    setDealerName("");
+    setDealerMobile("");
+    setDealerEmail("");
+    setCustomerName("");
+    setCustomerMobile("");
+    setCustomerEmail("");
+    setModelId("");
+    setSerialNumber("");
+    setPlanId("");
+    setActivationDate(null);
+    setSubmitted(false);
+  }, []);
+
+  const selectedPlan = plans.find((p) => p.id === planId);
 
   if (submitted) {
     return (
@@ -147,20 +144,7 @@ export default function PublicForm() {
             <p className="text-sm text-[#86868B]">{submittedData?.customer_email}</p>
           </div>
           <Button
-            onClick={() => {
-              setSubmitted(false);
-              setFormData({
-                dealer_name: "",
-                dealer_mobile: "",
-                customer_name: "",
-                customer_mobile: "",
-                customer_email: "",
-                model_id: "",
-                serial_number: "",
-                plan_id: "",
-                device_activation_date: null,
-              });
-            }}
+            onClick={resetForm}
             className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-8"
             data-testid="submit-another-btn"
           >
@@ -201,26 +185,58 @@ export default function PublicForm() {
                 Dealer Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Building2}
-                  label="Dealer Name"
-                  id="dealer_name"
-                  value={formData.dealer_name}
-                  onChange={(e) => handleChange("dealer_name", e.target.value)}
-                  placeholder="Enter dealer name"
-                  required
-                  data-testid="public-dealer-name-input"
-                />
-                <InputField
-                  icon={Phone}
-                  label="Dealer Mobile Number"
-                  id="dealer_mobile"
-                  value={formData.dealer_mobile}
-                  onChange={(e) => handleChange("dealer_mobile", e.target.value)}
-                  placeholder="Enter mobile number"
-                  required
-                  data-testid="public-dealer-mobile-input"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="dealer_name" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Dealer Name
+                  </Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="dealer_name"
+                      value={dealerName}
+                      onChange={(e) => setDealerName(e.target.value)}
+                      placeholder="Enter dealer name"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="public-dealer-name-input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dealer_mobile" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Dealer Mobile Number
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="dealer_mobile"
+                      value={dealerMobile}
+                      onChange={(e) => setDealerMobile(e.target.value)}
+                      placeholder="Enter mobile number"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="public-dealer-mobile-input"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dealer_email" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                  Dealer Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                  <Input
+                    id="dealer_email"
+                    type="email"
+                    value={dealerEmail}
+                    onChange={(e) => setDealerEmail(e.target.value)}
+                    placeholder="Enter dealer email"
+                    required
+                    className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                    data-testid="public-dealer-email-input"
+                  />
+                </div>
               </div>
             </div>
 
@@ -230,38 +246,59 @@ export default function PublicForm() {
                 Customer Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={User}
-                  label="Customer Name"
-                  id="customer_name"
-                  value={formData.customer_name}
-                  onChange={(e) => handleChange("customer_name", e.target.value)}
-                  placeholder="Enter customer name"
-                  required
-                  data-testid="public-customer-name-input"
-                />
-                <InputField
-                  icon={Phone}
-                  label="Customer Number"
-                  id="customer_mobile"
-                  value={formData.customer_mobile}
-                  onChange={(e) => handleChange("customer_mobile", e.target.value)}
-                  placeholder="Enter customer number"
-                  required
-                  data-testid="public-customer-mobile-input"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="customer_name" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Customer Name
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="customer_name"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter customer name"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="public-customer-name-input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customer_mobile" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Customer Number
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="customer_mobile"
+                      value={customerMobile}
+                      onChange={(e) => setCustomerMobile(e.target.value)}
+                      placeholder="Enter customer number"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="public-customer-mobile-input"
+                    />
+                  </div>
+                </div>
               </div>
-              <InputField
-                icon={Mail}
-                label="Customer Email"
-                id="customer_email"
-                type="email"
-                value={formData.customer_email}
-                onChange={(e) => handleChange("customer_email", e.target.value)}
-                placeholder="Enter email address"
-                required
-                data-testid="public-customer-email-input"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="customer_email" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                  Customer Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                  <Input
+                    id="customer_email"
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    required
+                    className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                    data-testid="public-customer-email-input"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Device Section */}
@@ -270,26 +307,40 @@ export default function PublicForm() {
                 Device Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  icon={Smartphone}
-                  label="Model ID"
-                  id="model_id"
-                  value={formData.model_id}
-                  onChange={(e) => handleChange("model_id", e.target.value)}
-                  placeholder="e.g., iPhone 15 Pro Max"
-                  required
-                  data-testid="public-model-id-input"
-                />
-                <InputField
-                  icon={Hash}
-                  label="Serial Number / IMEI"
-                  id="serial_number"
-                  value={formData.serial_number}
-                  onChange={(e) => handleChange("serial_number", e.target.value)}
-                  placeholder="Enter serial number"
-                  required
-                  data-testid="public-serial-number-input"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="model_id" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Model ID
+                  </Label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="model_id"
+                      value={modelId}
+                      onChange={(e) => setModelId(e.target.value)}
+                      placeholder="e.g., iPhone 15 Pro Max"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="public-model-id-input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="serial_number" className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                    Serial Number / IMEI
+                  </Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                    <Input
+                      id="serial_number"
+                      value={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                      placeholder="Enter serial number"
+                      required
+                      className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                      data-testid="public-serial-number-input"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Plan Selection */}
@@ -327,7 +378,7 @@ export default function PublicForm() {
                               key={plan.id}
                               value={`${plan.sku || plan.part_code} ${plan.description || plan.name} ${plan.mrp || ''}`}
                               onSelect={() => {
-                                handleChange("plan_id", plan.id);
+                                setPlanId(plan.id);
                                 setPlanOpen(false);
                               }}
                               data-testid={`public-plan-option-${plan.id}`}
@@ -335,7 +386,7 @@ export default function PublicForm() {
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  formData.plan_id === plan.id ? "opacity-100" : "opacity-0"
+                                  planId === plan.id ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               <div className="flex flex-col">
@@ -363,13 +414,13 @@ export default function PublicForm() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal bg-[#F5F5F7] border-transparent hover:bg-[#E8E8ED] h-11",
-                        !formData.device_activation_date && "text-[#86868B]"
+                        !activationDate && "text-[#86868B]"
                       )}
                       data-testid="public-activation-date-btn"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.device_activation_date ? (
-                        format(formData.device_activation_date, "PPP")
+                      {activationDate ? (
+                        format(activationDate, "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -378,9 +429,9 @@ export default function PublicForm() {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={formData.device_activation_date}
+                      selected={activationDate}
                       onSelect={(date) => {
-                        handleChange("device_activation_date", date);
+                        setActivationDate(date);
                         setDateOpen(false);
                       }}
                       initialFocus
@@ -389,7 +440,6 @@ export default function PublicForm() {
                   </PopoverContent>
                 </Popover>
               </div>
-
             </div>
 
             {/* Submit */}
