@@ -45,6 +45,10 @@ export const updateRequestStatus = (id, status) =>
 export const resendEmail = (id) => api.post(`/activation-requests/${id}/resend-email`);
 export const getInvoiceUrl = (id) => `${API_URL}/api/activation-requests/${id}/invoice`;
 
+// Approval Workflow API
+export const approveRequest = (id) => api.post(`/activation-requests/${id}/approve`);
+export const declineRequest = (id) => api.post(`/activation-requests/${id}/decline`);
+
 // Stats API
 export const getStats = () => api.get("/stats");
 
