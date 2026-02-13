@@ -170,7 +170,7 @@ export default function Dashboard() {
                     <div className="flex flex-col items-center gap-3">
                       <FileText className="w-12 h-12 text-[#D2D2D7]" />
                       <p className="text-[#86868B]">No activation requests found</p>
-                      <Link to="/new-request">
+                      <Link to="/admin/new-request">
                         <Button className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-5 gap-2">
                           <PlusCircle className="w-4 h-4" />
                           Create First Request
