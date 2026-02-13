@@ -917,7 +917,7 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
 # ==================== TGME SUPPORT TICKET SERVICE ====================
 
 async def create_tgme_ticket(request_data: dict):
-    """Create a TGME Support Ticket (formerly osTicket)"""
+    """Create a TGME Support Ticket (formerly osTicket) using DEALER details"""
     settings = await db.settings.find_one({"id": "main_settings"}, {"_id": 0})
     
     # Support both new and old field names for backward compatibility
@@ -928,13 +928,19 @@ async def create_tgme_ticket(request_data: dict):
         logger.warning("TGME Support Ticket settings not configured")
         return None
     
+    # Use DEALER details for ticket creation (not customer)
     ticket_data = {
-        "name": request_data.get('customer_name', ''),
-        "email": request_data.get('customer_email', ''),
-        "phone": request_data.get('customer_mobile', ''),
+        "name": request_data.get('dealer_name', ''),
+        "email": request_data.get('dealer_email', ''),
+        "phone": request_data.get('dealer_mobile', ''),
         "subject": f"AppleCare+ Activation - {request_data.get('serial_number', '')}",
         "message": f"""
 AppleCare+ Activation Request
+
+Dealer Details:
+- Name: {request_data.get('dealer_name', '')}
+- Email: {request_data.get('dealer_email', '')}
+- Mobile: {request_data.get('dealer_mobile', '')}
 
 Customer Details:
 - Name: {request_data.get('customer_name', '')}
@@ -947,8 +953,6 @@ Device Details:
 - Activation Date: {request_data.get('device_activation_date', '')}
 
 Plan: {request_data.get('plan_name', '')} ({request_data.get('plan_part_code', '')})
-
-Dealer: {request_data.get('dealer_name', '')} ({request_data.get('dealer_mobile', '')})
         """,
         "topicId": "1"
     }
