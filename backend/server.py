@@ -1146,7 +1146,8 @@ async def get_activation_request(request_id: str, user: dict = Depends(get_curre
 @api_router.post("/activation-requests", response_model=ActivationRequest)
 async def create_activation_request(
     data: ActivationRequestCreate,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    request: Request
 ):
     # Public endpoint - no auth required
     # Get plan details
@@ -1173,7 +1174,8 @@ async def create_activation_request(
         plan_sku=plan_sku_value,
         plan_mrp=plan.get('mrp'),
         billing_location="F9B4869273B7",  # Hardcoded
-        payment_type="Insta"  # Hardcoded
+        payment_type="Insta",  # Hardcoded
+        status="pending_approval"  # NEW: Set initial status to pending_approval
     )
     
     doc = request_obj.model_dump()
@@ -1187,8 +1189,16 @@ async def create_activation_request(
     
     await db.activation_requests.insert_one(doc)
     
-    # Background tasks: create TGME ticket and send email
-    background_tasks.add_task(process_activation_request, request_obj.id)
+    # Get base URL for approval links
+    base_url = str(request.base_url).rstrip('/')
+    # In production, use the forwarded host if available
+    forwarded_host = request.headers.get('x-forwarded-host')
+    forwarded_proto = request.headers.get('x-forwarded-proto', 'https')
+    if forwarded_host:
+        base_url = f"{forwarded_proto}://{forwarded_host}"
+    
+    # NEW: Send approval email instead of directly processing
+    background_tasks.add_task(send_approval_email, doc, base_url)
     
     return request_obj
 
