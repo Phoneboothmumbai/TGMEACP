@@ -42,8 +42,8 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'applecare-activation-secret-key-2025')
 JWT_ALGORITHM = "HS256"
 
-# Approval email recipient
-APPROVAL_EMAIL = "contact@thegoodmen.in"
+# Default approval email recipient (fallback if not configured in settings)
+DEFAULT_APPROVAL_EMAIL = "contact@thegoodmen.in"
 
 # Upload directory
 UPLOAD_DIR = ROOT_DIR / 'uploads'
@@ -134,7 +134,7 @@ class ActivationRequest(BaseModel):
     billing_location: str = "F9B4869273B7"  # Hardcoded as per requirement
     payment_type: str = "Insta"  # Hardcoded as per requirement
     invoice_path: Optional[str] = None
-    status: str = "pending"
+    status: str = "pending_approval"  # Default to pending_approval for new workflow
     tgme_ticket_id: Optional[str] = None  # Renamed from osticket_id
     email_sent: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -144,6 +144,7 @@ class SettingsModel(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "main_settings"
     apple_email: str = ""  # Now supports comma-separated emails
+    approval_email: str = ""  # Email for approval notifications (configurable)
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_email: str = ""
@@ -158,6 +159,7 @@ class SettingsModel(BaseModel):
 
 class SettingsUpdate(BaseModel):
     apple_email: Optional[str] = None
+    approval_email: Optional[str] = None
     smtp_host: Optional[str] = None
     smtp_port: Optional[int] = None
     smtp_email: Optional[str] = None
