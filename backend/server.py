@@ -101,6 +101,7 @@ class AppleCarePlanCreate(BaseModel):
 class ActivationRequestCreate(BaseModel):
     dealer_name: str
     dealer_mobile: str
+    dealer_email: EmailStr
     customer_name: str
     customer_mobile: str
     customer_email: EmailStr
@@ -114,6 +115,7 @@ class ActivationRequest(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     dealer_name: str
     dealer_mobile: str
+    dealer_email: str = ""
     customer_name: str
     customer_mobile: str
     customer_email: str
