@@ -1075,7 +1075,7 @@ async def process_activation_request(request_id: str):
     if not req:
         return
     
-    # Create TGME Support Ticket
+    # Create TGME Support Ticket FIRST to get the ticket ID
     ticket_id = await create_tgme_ticket(req)
     if ticket_id:
         await db.activation_requests.update_one(
@@ -1083,8 +1083,8 @@ async def process_activation_request(request_id: str):
             {"$set": {"tgme_ticket_id": ticket_id, "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
     
-    # Send email to Apple
-    email_sent = await send_activation_email(req, req.get('invoice_path'))
+    # Send email to Apple with ticket ID in subject
+    email_sent = await send_activation_email(req, req.get('invoice_path'), ticket_id)
     await db.activation_requests.update_one(
         {"id": request_id},
         {"$set": {"email_sent": email_sent, "updated_at": datetime.now(timezone.utc).isoformat()}}
