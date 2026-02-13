@@ -112,6 +112,7 @@ export default function Settings() {
     try {
       await updateSettings({
         apple_email: appleEmail,
+        approval_email: approvalEmail,
         smtp_host: smtpHost,
         smtp_port: smtpPort,
         smtp_email: smtpEmail,
