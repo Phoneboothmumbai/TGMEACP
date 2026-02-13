@@ -1110,7 +1110,9 @@ async def resend_email(request_id: str, background_tasks: BackgroundTasks, user:
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
     
-    background_tasks.add_task(send_activation_email, req, req.get('invoice_path'))
+    # Include ticket ID in email subject when resending
+    ticket_id = req.get('tgme_ticket_id') or req.get('osticket_id')
+    background_tasks.add_task(send_activation_email, req, req.get('invoice_path'), ticket_id)
     return {"message": "Email resend queued"}
 
 @api_router.get("/activation-requests/{request_id}/invoice")
