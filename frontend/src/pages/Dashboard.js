@@ -232,7 +232,7 @@ export default function Dashboard() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Link to={`/request/${request.id}`}>
+                        <Link to={`/admin/request/${request.id}`}>
                           <Button variant="ghost" size="sm" className="hover:bg-[#F5F5F7] gap-1.5" data-testid={`view-request-${request.id}`}>
                             <Eye className="w-4 h-4" />
                             View
