@@ -3,9 +3,10 @@
 ## Original Problem Statement
 Build an AppleCare+ activation management system for Apple partners. The process involves:
 1. Customer/dealer fills form with: Dealer Name, Dealer Mobile, Customer Name, Customer Number, Customer Email, Model ID, Serial Number, Plans (searchable dropdown), Device Activation Date
-2. System auto-creates ticket in TGME Support Ticket system
-3. System auto-sends email to Apple in tabular format (supports multiple recipients)
-4. Settings page to manage: Apple email recipients, SMTP config, TGME Support Ticket API, and AppleCare+ plans master
+2. **NEW: Admin receives approval email with Approve/Decline buttons**
+3. **Only after approval**: System auto-creates ticket in TGME Support Ticket system
+4. **Only after approval**: System auto-sends email to Apple in tabular format (supports multiple recipients)
+5. Settings page to manage: Apple email recipients, **Approval email address**, SMTP config, TGME Support Ticket API, and AppleCare+ plans master
 
 ## User Choices/Preferences
 - Form is public - anyone can fill without login
@@ -16,9 +17,10 @@ Build an AppleCare+ activation management system for Apple partners. The process
 - Design: Minimal, professional
 - Billing Location: Hardcoded as F9B4869273B7
 - Payment Type: Hardcoded as Insta
+- **Approval workflow enabled by default** - requests need admin approval before processing
 
 ## User Personas
-1. **Admin/Partner Staff**: Manages activation requests, configures settings, tracks statuses
+1. **Admin/Partner Staff**: Manages activation requests, **approves/declines requests**, configures settings, tracks statuses
 2. **Dealer/Customer**: Submits activation requests via the PUBLIC form (no login needed)
 
 ## Core Requirements
@@ -49,6 +51,16 @@ Build an AppleCare+ activation management system for Apple partners. The process
 - [x] Email to Apple in tabular format (ready when SMTP configured)
 - [x] **TGME Support Ticket uses DEALER details** (name, email, mobile) not customer
 - [x] Renamed "osTicket" to "TGME Support Ticket" throughout the app
+- [x] **APPROVAL WORKFLOW COMPLETE:**
+  - New requests get `pending_approval` status by default
+  - Configurable approval email address in Settings (default: contact@thegoodmen.in)
+  - Approval email sent with all request details + Approve/Decline buttons
+  - Email-based approval via secure token links
+  - Dashboard shows "Pending Approval" stat card
+  - Approve/Decline buttons in Dashboard for pending_approval requests
+  - Status filter includes "Pending Approval" and "Declined" options
+  - Only approved requests trigger TGME ticket creation and Apple email
+  - Declined requests marked as `declined` status
 
 ### URL Structure
 - `/` - Public form (anyone can access)
