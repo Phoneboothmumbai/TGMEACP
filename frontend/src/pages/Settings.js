@@ -87,6 +87,7 @@ export default function Settings() {
       ]);
       const s = settingsRes.data;
       setAppleEmail(s.apple_email || "");
+      setApprovalEmail(s.approval_email || "");
       setSmtpHost(s.smtp_host || "smtp.gmail.com");
       setSmtpPort(s.smtp_port || 587);
       setSmtpEmail(s.smtp_email || "");
