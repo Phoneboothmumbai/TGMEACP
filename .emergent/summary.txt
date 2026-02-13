@@ -1,0 +1,221 @@
+<analysis>**original_problem_statement:**
+The user, an Apple partner, wants to automate the AppleCare+ activation process. The current process involves customers or resellers filling out a form. The details are then manually formatted into a table and emailed to Apple for activation. After Apple responds with a payment link, a payment is made, and the plan is activated.
+
+**PRODUCT REQUIREMENTS:**
+1.  A web form for customers/dealers to submit activation requests with the following fields: Dealer Name, Dealer Mobile Number, Customer Name, Customer Number, Customer Email, Model ID, Serial Number, Plans, Device Activation Date, and Upload Invoice.
+2.  Upon form submission, the system should automatically:
+    a. Create a ticket in their osTicket platform (to be renamed TGME Support Ticket).
+    b. Send an email to Apple with the activation details in a specific tabular format.
+3.  An admin settings page to update the recipient email ID(s) for Apple and the osTicket API configuration.
+4.  The system should support a master list of AppleCare+ plans, which should be selectable from a searchable dropdown in the form.
+5.  User authentication should be JWT-based for admins. The public form should be accessible without a login.
+6.  If an invoice is not uploaded, one should be generated in PDF format and attached to the email.
+7.  The admin dashboard should list all requests and sync the osTicket ID with each request.
+8.  The form has a bug where the cursor disappears after typing a character.
+9.  The system must allow sending emails to multiple Apple email IDs.
+10. The system needs a feature to upload an Excel file for AppleCare+ plans, with an option to download a sample format. The plan dropdown should display SKU, Description, and MRP.
+11. The fields Billing Location and Payment Type should be removed from the form and hardcoded in the backend with fixed values ( and  respectively).
+12. The plan management system should have full CRUD (Create, Edit, Delete) functionality for manual entries.
+13. Rename all instances of osTicket to TGME Support Ticket.
+
+**User's preferred language**: English
+
+**what currently exists?**
+A full-stack application has been developed using FastAPI for the backend and React for the frontend.
+-   **Backend**: Implemented with FastAPI and MongoDB. It includes JWT-based authentication, CRUD APIs for activation requests and AppleCare+ plans, and stubs for email sending and PDF generation.
+-   **Frontend**: A React application with a public form for submitting activation requests and a protected admin area. The admin area consists of a dashboard to view all requests, a settings page for configuration, and a section to manage AppleCare+ plans.
+-   **Functionality**:
+    -   Admin login is functional.
+    -   A public form at the root URL allows anyone to submit an activation request.
+    -   The admin dashboard displays a list of submitted requests, including a Ticket ID column (currently empty).
+    -   The settings page has tabs for General (Email, TGME Support Ticket config) and AppleCare+ Plans management.
+
+**Last working item**:
+The agent was about to address a list of bugs and new feature requests provided by the user in their last message. This work was based on the user's feedback after testing the application.
+
+-   **Last item agent was working**: Addressing user feedback which includes fixing a form input bug, adding support for multiple email recipients, implementing Excel upload for plans, updating plan details, removing fields from the public form, and renaming osTicket.
+-   **Status**: NOT STARTED
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: both
+-   **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+-   **Issue 1 (P0)**: Form input cursor issue.
+-   **Issue 2 (P1)**: Rename osTicket to TGME Support Ticket.
+
+**Issues Detail**:
+-   **Issue 1: Form input cursor disappears on typing**
+    -   **Attempted fixes**: None.
+    -   **Next debug checklist**:
+        -   Review  and .
+        -   Investigate the  handlers for the input fields. The issue is likely caused by how component state is updated, leading to a re-render that makes the input lose focus.
+        -   Consider using uncontrolled components or memoizing state updates to prevent unnecessary re-renders.
+    -   **Why fix this issue and what will be achieved with the fix?**: The form is currently unusable. Fixing this is critical for the core functionality of the application.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+
+-   **Issue 2: Rename osTicket to TGME Support Ticket**
+    -   **Attempted fixes**: None.
+    -   **Next debug checklist**:
+        -   Perform a global search for the string osTicket in the entire  directory.
+        -   Replace all occurrences in frontend components (, ) and backend code () with TGME Support Ticket.
+    -   **Why fix this issue and what will be achieved with the fix?**: To align the application's terminology with the user's branding.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+
+**In progress Task List**:
+-   **Task 1 (P0)**: Implement Excel upload for AppleCare+ plans.
+-   **Task 2 (P0)**: Add full CRUD functionality for plans.
+-   **Task 3 (P1)**: Enhance plan details (SKU, Description, MRP).
+-   **Task 4 (P1)**: Support multiple recipient emails for Apple notifications.
+-   **Task 5 (P2)**: Hardcode  and .
+
+**Task Detail**:
+-   **Task 1: Implement Excel upload for AppleCare+ plans**
+    -   **Where to resume**:
+        -   **Backend**: In , create a new endpoint (e.g., ) that accepts an Excel file. Use a library like  (install it first) to parse the uploaded file (). The agent has already analyzed the file structure.
+        -   **Frontend**: In , under the AppleCare+ Plans tab, add a file input for uploading the Excel file and a button to trigger the upload. Also, add a Download Sample button.
+    -   **What will be achieved with this?**: Allow the admin to bulk-update AppleCare+ plans easily.
+    -   **Status**: NOT STARTED
+    -   **Should Test frontend/backend/both after fix?**: both
+
+-   **Task 2: Add full CRUD functionality for plans**
+    -   **Where to resume**:
+        -   **Backend**: Ensure  has endpoints for creating (), updating (), and deleting () individual plans.
+        -   **Frontend**: In , implement UI elements (buttons for Add New, Edit, Delete) and forms/modals to interact with the backend CRUD endpoints.
+    -   **What will be achieved with this?**: Give the admin full control over managing the plans manually.
+    -   **Status**: NOT STARTED
+    -   **Should Test frontend/backend/both after fix?**: both
+
+-   **Task 3: Enhance plan details**
+    -   **Where to resume**:
+        -   **Backend**: In , update the  Pydantic model and the MongoDB schema to include , , and .
+        -   **Frontend**: In  and , modify the plan selection dropdown to display these new fields. Update the  page to show and edit these fields in the plan management table.
+    -   **What will be achieved with this?**: Provide more detailed information to the user when selecting a plan.
+    -   **Status**: NOT STARTED
+    -   **Should Test frontend/backend/both after fix?**: both
+
+-   **Task 4: Support multiple recipient emails**
+    -   **Where to resume**:
+        -   **Backend**: In , modify the  endpoint to accept a comma-separated string or an array of email addresses for . Update the  function to handle multiple recipients.
+        -   **Frontend**: In , change the Apple Email ID input to a textarea or a tag-based input field to allow entering multiple emails.
+    -   **What will be achieved with this?**: Allow notifications to be sent to multiple stakeholders at Apple simultaneously.
+    -   **Status**: NOT STARTED
+    -   **Should Test frontend/backend/both after fix?**: both
+
+-   **Task 5: Hardcode  and **
+    -   **Where to resume**:
+        -   **Backend**: In , inside the  endpoint (and the function that sends the email to Apple), hardcode  to F9B4869273B7 and  (or Insta/Credit GT/MM2) to Insta.
+        -   **Frontend**: In  and , remove the input fields for Billing Location and Payment Type.
+    -   **What will be achieved with this?**: Simplify the form for the end-user and ensure consistent internal data is used.
+    -   **Status**: NOT STARTED
+    -   **Should Test frontend/backend/both after fix?**: both
+
+**Upcoming and Future Tasks**
+-   **P0: Full TGME Support Ticket (osTicket) Integration**: Implement the logic to create a ticket upon form submission. This is blocked pending API URL and Key from the user, which they will enter on the settings page. The agent needs to build the service to use those settings.
+-   **P1: Full Email Integration**: The current email implementation is a stub. The agent needs to implement the actual email sending logic using SMTP with the Google Workspace credentials (email and app password) that the user will provide in the settings.
+-   **P2: PDF Invoice Generation**: The current implementation is a stub. The agent needs to implement the logic to generate a PDF invoice using  with the details from the activation request.
+-   **P2: Dealer Portal**: The user suggested a potential future enhancement for a portal where dealers can submit requests and track their own activation statuses.
+
+**Completed work in this session**
+-   **Full-stack application scaffold**: Created a FastAPI backend and a React frontend.
+-   **Admin Authentication**: Implemented JWT-based login/logout for an admin user.
+-   **Public Activation Form**: Created a public form that anyone can access to submit an activation request.
+-   **Admin Dashboard**: Built a dashboard to display all submitted activation requests in a table.
+-   **Settings Page**: Created a settings area with stubs for managing email, support ticket integration, and AppleCare+ plans.
+-   **Initial Plan Management**: Implemented basic loading of AppleCare+ plans.
+-   **Auth Flow Fix**: Corrected a backend issue where the authorization token was expected as a query parameter instead of a header.
+
+**Earlier issues found/mentioned but not fixed**
+-   **Issue 1: Dashboard Table Loading... Indefinitely**
+    -   The testing agent reported that the dashboard table sometimes gets stuck on Loading.... The main agent dismissed it as a potential timing issue after manual  tests and a subsequent screenshot showed the data.
+    -   **Debug checklist**: Review . The  hook for fetching data might have a dependency array issue, or there could be a race condition in setting the loading state.
+    -   **Why to solve this issue and what will be achieved with this?**: Ensures the admin can reliably see the list of activation requests.
+    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Is recurring issue?**: Y
+
+**Known issue recurrence from previous fork**
+-   None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend**: FastAPI, Pydantic, MongoDB (via ), JWT for authentication.
+-   **Frontend**: React, React Router, , , Context API for state management.
+-   **Deployment**: The application runs in a containerized environment managed by .
+
+**key DB schema**
+-   : 
+-   : 
+-   : A single document collection storing .
+-   :  (to be updated with SKU, MRP).
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-   : The core FastAPI application logic, including all API endpoints, models, and database interactions.
+-   : The public-facing form for creating activation requests. **(Needs bug fix)**
+-   : The admin dashboard for viewing requests. **(Needs UI updates for Ticket ID, may have a loading bug)**
+-   : The admin page for managing plans and application settings. **(Needs major updates for plan CRUD, Excel upload, and multiple emails)**
+-   : Main React router configuration.
+-   : Manages user authentication state.
+-   : The project requirements document.
+
+**Areas that need refactoring**:
+-   The  component may have a state management or data-fetching issue that causes it to get stuck on Loading.... This needs to be investigated and fixed properly rather than being dismissed as a timing issue.
+
+**key api endpoints**
+-   : Admin login.
+-   : Get current user details.
+-   : Change admin password.
+-   : Get all activation requests.
+-   : Create a new activation request (used by public form).
+-   : Get details for a single request.
+-   : Manage application settings.
+-   : CRUD operations for AppleCare+ plans.
+
+**Critical Info for New Agent**
+-   You must start by addressing the user's latest feedback, which is a mix of critical bug fixes and new features. The highest priority is fixing the unusable public form.
+-   The user has provided an Excel file with the schema for AppleCare+ plans. You need to use  or a similar library to implement the Excel upload feature.
+-   osTicket must be renamed to TGME Support Ticket across the entire application.
+-   The integration with the support ticket system and the email service are still pending user-provided credentials. Your implementation should use the values from the settings page.
+-   The dashboard loading issue reported by the testing agent was not definitively resolved and may reappear. Be prepared to debug .
+
+**documents and test reports created in this job**
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User**: Reports the form is unusable because the cursor disappears on typing. Asks for multiple Apple email recipients. Asks for Excel upload for plans, showing SKU/Description/MRP. Asks to remove and hardcode Billing Location/Payment Type. Asks for full CRUD for plans and a sample file download. Requests renaming osTicket to TGME Support Ticket. (STATUS: PENDING)
+2.  **Agent**: Finishes session, summarizing the implementation of the public form and updated admin dashboard. (STATUS: DONE)
+3.  **User**: States the form must be open for anyone to fill, the backend should see all requests, and the osTicket ID should be synced. (STATUS: RESOLVED)
+4.  **Agent**: Finishes session, summarizing the MVP completion and suggesting a dealer portal as a next step. (STATUS: DONE)
+5.  **Agent**: Creates the PRD.md file. (STATUS: DONE)
+6.  **Agent**: Views the request detail page, confirms it's working. (STATUS: DONE)
+7.  **Agent**: Verifies the dashboard now shows the created request. (STATUS: DONE)
+8.  **Agent**: Creates a request via  to test the backend. (STATUS: DONE)
+9.  **Agent**: Notes the calendar and plan selection are working on the form. (STATUS: DONE)
+10. **Agent**: Acknowledges the test agent's report about the dashboard Loading... issue and decides to investigate. (STATUS: IN PROGRESS - led to manual verification, not a code fix)
+
+**Project Health Check:**
+-   **Broken**: The public form is unusable due to the input focus bug.
+-   **Mocked**: Email sending, PDF generation, and TGME Support Ticket integration are currently stubs waiting for real implementation and credentials.
+
+**3rd Party Integrations**
+-   **Gmail API (via SMTP)**: Planned for sending emails to Apple. Requires user-provided credentials (email, app password).
+-   **osTicket API (renamed TGME Support Ticket)**: Planned for ticket creation. Requires user-provided credentials (API URL, API Key).
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: None.
+-   **Known regressions**: The public form is now broken due to the cursor issue.
+
+**Credentials to test flow:**
+-   **Username**: 
+-   **Password**: 
+(As defined in  during initial user creation).</analysis>
