@@ -283,6 +283,133 @@ async def delete_plan(plan_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Plan not found")
     return {"message": "Plan deactivated"}
 
+@api_router.get("/plans/sample")
+async def download_sample_excel(user: dict = Depends(get_current_user)):
+    """Download a sample Excel file for AppleCare+ plans upload"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "AppleCare+ Plans"
+    
+    # Headers
+    headers = ["SKU", "Description", "MRP", "Part Code", "Plan Name"]
+    for col, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col, value=header)
+    
+    # Sample data
+    sample_data = [
+        ["S9732ZM/A", "AppleCare+ for iPhone 15", 14900, "SR182HN/A", "AppleCare+ for iPhone 15"],
+        ["S9733ZM/A", "AppleCare+ for iPhone 15 Pro", 23900, "SR183HN/A", "AppleCare+ for iPhone 15 Pro"],
+        ["S9734ZM/A", "AppleCare+ for iPhone 15 Pro Max", 23900, "SR184HN/A", "AppleCare+ for iPhone 15 Pro Max"],
+    ]
+    
+    for row_num, row_data in enumerate(sample_data, 2):
+        for col_num, value in enumerate(row_data, 1):
+            ws.cell(row=row_num, column=col_num, value=value)
+    
+    # Adjust column widths
+    ws.column_dimensions['A'].width = 15
+    ws.column_dimensions['B'].width = 40
+    ws.column_dimensions['C'].width = 12
+    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['E'].width = 35
+    
+    # Save to bytes buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=applecare_plans_sample.xlsx"}
+    )
+
+@api_router.post("/plans/upload")
+async def upload_plans_excel(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Upload AppleCare+ plans from Excel file"""
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only Excel files (.xlsx, .xls) are allowed")
+    
+    try:
+        content = await file.read()
+        wb = openpyxl.load_workbook(io.BytesIO(content))
+        ws = wb.active
+        
+        # Get headers from first row
+        headers = [cell.value for cell in ws[1] if cell.value]
+        header_map = {h.lower().strip(): idx for idx, h in enumerate(headers)}
+        
+        imported_count = 0
+        errors = []
+        
+        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), 2):
+            if not any(row):  # Skip empty rows
+                continue
+                
+            try:
+                # Extract data based on header positions
+                sku = str(row[header_map.get('sku', 0)] or '').strip()
+                description = str(row[header_map.get('description', 1)] or '').strip()
+                mrp_val = row[header_map.get('mrp', 2)]
+                part_code = str(row[header_map.get('part code', 3)] or row[header_map.get('partcode', 3)] or '').strip()
+                plan_name = str(row[header_map.get('plan name', 4)] or row[header_map.get('name', 4)] or '').strip()
+                
+                # Parse MRP
+                mrp = None
+                if mrp_val:
+                    try:
+                        mrp = float(str(mrp_val).replace(',', '').replace('₹', '').strip())
+                    except:
+                        pass
+                
+                # Skip if no SKU and no part code
+                if not sku and not part_code:
+                    continue
+                
+                # Check if plan with same SKU already exists
+                existing = await db.plans.find_one({"$or": [{"sku": sku}, {"part_code": part_code}]})
+                
+                if existing:
+                    # Update existing plan
+                    await db.plans.update_one(
+                        {"id": existing["id"]},
+                        {"$set": {
+                            "sku": sku or existing.get("sku", ""),
+                            "description": description or existing.get("description", ""),
+                            "mrp": mrp if mrp else existing.get("mrp"),
+                            "part_code": part_code or existing.get("part_code", ""),
+                            "name": plan_name or existing.get("name", ""),
+                            "active": True
+                        }}
+                    )
+                else:
+                    # Create new plan
+                    plan = AppleCarePlan(
+                        sku=sku,
+                        description=description,
+                        mrp=mrp,
+                        part_code=part_code,
+                        name=plan_name
+                    )
+                    doc = plan.model_dump()
+                    doc['created_at'] = doc['created_at'].isoformat()
+                    await db.plans.insert_one(doc)
+                
+                imported_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {row_num}: {str(e)}")
+        
+        return {
+            "message": f"Successfully imported {imported_count} plans",
+            "imported_count": imported_count,
+            "errors": errors[:10] if errors else []  # Return first 10 errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Excel upload error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to process Excel file: {str(e)}")
+
 # ==================== SETTINGS ROUTES ====================
 
 @api_router.get("/settings", response_model=SettingsModel)
