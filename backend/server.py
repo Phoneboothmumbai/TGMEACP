@@ -904,6 +904,7 @@ async def send_activation_email(request_data: dict, invoice_path: Optional[str] 
     try:
         await aiosmtplib.send(
             msg,
+            recipients=apple_emails,  # Explicitly pass all recipients
             hostname=settings.get('smtp_host', 'smtp.gmail.com'),
             port=settings.get('smtp_port', 587),
             username=settings['smtp_email'],
