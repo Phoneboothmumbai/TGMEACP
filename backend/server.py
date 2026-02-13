@@ -667,8 +667,12 @@ async def create_activation_request(
     
     request_obj = ActivationRequest(
         **data.model_dump(),
-        plan_name=plan.get('name', ''),
-        plan_part_code=plan.get('part_code', '')
+        plan_name=plan.get('name', '') or plan.get('description', ''),
+        plan_part_code=plan.get('part_code', ''),
+        plan_sku=plan.get('sku', ''),
+        plan_mrp=plan.get('mrp'),
+        billing_location="F9B4869273B7",  # Hardcoded
+        payment_type="Insta"  # Hardcoded
     )
     
     doc = request_obj.model_dump()
@@ -682,23 +686,23 @@ async def create_activation_request(
     
     await db.activation_requests.insert_one(doc)
     
-    # Background tasks: create osTicket and send email
+    # Background tasks: create TGME ticket and send email
     background_tasks.add_task(process_activation_request, request_obj.id)
     
     return request_obj
 
 async def process_activation_request(request_id: str):
-    """Background task to create osTicket and send email"""
+    """Background task to create TGME Support Ticket and send email"""
     req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
         return
     
-    # Create osTicket
-    osticket_id = await create_osticket(req)
-    if osticket_id:
+    # Create TGME Support Ticket
+    ticket_id = await create_tgme_ticket(req)
+    if ticket_id:
         await db.activation_requests.update_one(
             {"id": request_id},
-            {"$set": {"osticket_id": osticket_id, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {"tgme_ticket_id": ticket_id, "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
     
     # Send email to Apple
