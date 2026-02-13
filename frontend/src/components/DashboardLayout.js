@@ -13,9 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "New Request", href: "/new-request", icon: PlusCircle },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "New Request", href: "/admin/new-request", icon: PlusCircle },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function DashboardLayout({ children, title }) {
