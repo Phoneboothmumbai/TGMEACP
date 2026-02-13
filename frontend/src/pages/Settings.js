@@ -328,6 +328,23 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
+                      Approval Email (Admin)
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
+                      <Input
+                        type="email"
+                        value={approvalEmail}
+                        onChange={(e) => setApprovalEmail(e.target.value)}
+                        placeholder="contact@thegoodmen.in"
+                        className="pl-10 bg-[#F5F5F7] border-transparent focus:border-[#0071E3] focus:ring-0 rounded-lg h-11"
+                        data-testid="approval-email-input"
+                      />
+                    </div>
+                    <p className="text-xs text-[#86868B]">Email to receive approval requests (default: contact@thegoodmen.in)</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-[#86868B] uppercase tracking-wider">
                       Partner Name
                     </Label>
                     <div className="relative">
