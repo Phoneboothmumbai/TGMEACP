@@ -47,11 +47,12 @@ const statusConfig = {
 
 export default function Dashboard() {
   const [requests, setRequests] = useState([]);
-  const [stats, setStats] = useState({ total: 0, pending: 0, activated: 0, payment_pending: 0 });
+  const [stats, setStats] = useState({ total: 0, pending_approval: 0, pending: 0, activated: 0, payment_pending: 0, declined: 0 });
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [actionLoading, setActionLoading] = useState({});
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [requestsRes, statsRes] = await Promise.all([
@@ -65,11 +66,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchData();
-  }, [statusFilter]);
+  }, [fetchData]);
 
   const handleStatusChange = async (requestId, newStatus) => {
     try {
