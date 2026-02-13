@@ -580,8 +580,7 @@ async def resend_email(request_id: str, background_tasks: BackgroundTasks, user:
     return {"message": "Email resend queued"}
 
 @api_router.get("/activation-requests/{request_id}/invoice")
-async def download_invoice(request_id: str, authorization: str = None):
-    await get_current_user(authorization)
+async def download_invoice(request_id: str, user: dict = Depends(get_current_user)):
     req = await db.activation_requests.find_one({"id": request_id}, {"_id": 0})
     if not req or not req.get('invoice_path'):
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -598,9 +597,7 @@ async def download_invoice(request_id: str, authorization: str = None):
 # ==================== FILE UPLOAD ====================
 
 @api_router.post("/upload-invoice/{request_id}")
-async def upload_invoice(request_id: str, file: UploadFile = File(...), authorization: str = None):
-    await get_current_user(authorization)
-    
+async def upload_invoice(request_id: str, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files allowed")
     
@@ -621,9 +618,7 @@ async def upload_invoice(request_id: str, file: UploadFile = File(...), authoriz
 # ==================== DASHBOARD STATS ====================
 
 @api_router.get("/stats")
-async def get_stats(authorization: str = None):
-    await get_current_user(authorization)
-    
+async def get_stats(user: dict = Depends(get_current_user)):
     total = await db.activation_requests.count_documents({})
     pending = await db.activation_requests.count_documents({"status": "pending"})
     activated = await db.activation_requests.count_documents({"status": "activated"})
