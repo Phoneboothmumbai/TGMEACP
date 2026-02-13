@@ -941,6 +941,9 @@ async def send_approval_email(request_data: dict, base_url: str):
         logger.warning("SMTP settings not configured for approval email")
         return False
     
+    # Get approval email from settings, fallback to default
+    approval_email = settings.get('approval_email', '').strip() or DEFAULT_APPROVAL_EMAIL
+    
     request_id = request_data.get('id', '')
     approve_token = generate_approval_token(request_id, 'approve')
     decline_token = generate_approval_token(request_id, 'decline')
@@ -950,7 +953,7 @@ async def send_approval_email(request_data: dict, base_url: str):
     
     msg = MIMEMultipart()
     msg['From'] = settings['smtp_email']
-    msg['To'] = APPROVAL_EMAIL
+    msg['To'] = approval_email
     msg['Subject'] = f"Approval Required: AppleCare+ Activation - {request_data.get('customer_name', '')}"
     
     html_body = f"""
@@ -1016,14 +1019,14 @@ async def send_approval_email(request_data: dict, base_url: str):
     try:
         await aiosmtplib.send(
             msg,
-            recipients=[APPROVAL_EMAIL],
+            recipients=[approval_email],
             hostname=settings.get('smtp_host', 'smtp.gmail.com'),
             port=settings.get('smtp_port', 587),
             username=settings['smtp_email'],
             password=settings['smtp_password'],
             start_tls=True
         )
-        logger.info(f"Approval email sent to {APPROVAL_EMAIL}")
+        logger.info(f"Approval email sent to {approval_email}")
         return True
     except Exception as e:
         logger.error(f"Failed to send approval email: {e}")
