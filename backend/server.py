@@ -230,8 +230,7 @@ async def change_password(data: PasswordChange, user: dict = Depends(get_current
     return {"message": "Password changed successfully"}
 
 @api_router.get("/auth/me", response_model=UserResponse)
-async def get_me(authorization: str = None):
-    user = await get_current_user(authorization)
+async def get_me(user: dict = Depends(get_current_user)):
     return UserResponse(id=user["id"], email=user["email"], name=user["name"])
 
 # ==================== PLANS ROUTES ====================
@@ -246,8 +245,7 @@ async def get_plans(active_only: bool = True):
     return plans
 
 @api_router.post("/plans", response_model=AppleCarePlan)
-async def create_plan(data: AppleCarePlanCreate, authorization: str = None):
-    await get_current_user(authorization)
+async def create_plan(data: AppleCarePlanCreate, user: dict = Depends(get_current_user)):
     plan = AppleCarePlan(**data.model_dump())
     doc = plan.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
@@ -255,8 +253,7 @@ async def create_plan(data: AppleCarePlanCreate, authorization: str = None):
     return plan
 
 @api_router.put("/plans/{plan_id}", response_model=AppleCarePlan)
-async def update_plan(plan_id: str, data: AppleCarePlanCreate, authorization: str = None):
-    await get_current_user(authorization)
+async def update_plan(plan_id: str, data: AppleCarePlanCreate, user: dict = Depends(get_current_user)):
     update_data = data.model_dump()
     result = await db.plans.update_one({"id": plan_id}, {"$set": update_data})
     if result.matched_count == 0:
@@ -267,8 +264,7 @@ async def update_plan(plan_id: str, data: AppleCarePlanCreate, authorization: st
     return plan
 
 @api_router.delete("/plans/{plan_id}")
-async def delete_plan(plan_id: str, authorization: str = None):
-    await get_current_user(authorization)
+async def delete_plan(plan_id: str, user: dict = Depends(get_current_user)):
     result = await db.plans.update_one({"id": plan_id}, {"$set": {"active": False}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -277,8 +273,7 @@ async def delete_plan(plan_id: str, authorization: str = None):
 # ==================== SETTINGS ROUTES ====================
 
 @api_router.get("/settings", response_model=SettingsModel)
-async def get_settings(authorization: str = None):
-    await get_current_user(authorization)
+async def get_settings(user: dict = Depends(get_current_user)):
     settings = await db.settings.find_one({"id": "main_settings"}, {"_id": 0})
     if not settings:
         default_settings = SettingsModel()
