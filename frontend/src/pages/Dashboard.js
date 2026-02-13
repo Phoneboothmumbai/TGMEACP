@@ -153,6 +153,7 @@ export default function Dashboard() {
                 <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Plan</TableHead>
                 <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Dealer</TableHead>
                 <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Date</TableHead>
+                <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Ticket ID</TableHead>
                 <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Status</TableHead>
                 <TableHead className="text-xs font-medium text-[#86868B] uppercase tracking-wider">Actions</TableHead>
               </TableRow>
@@ -160,13 +161,13 @@ export default function Dashboard() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-[#86868B]">
+                  <TableCell colSpan={8} className="text-center py-12 text-[#86868B]">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : requests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center gap-3">
                       <FileText className="w-12 h-12 text-[#D2D2D7]" />
                       <p className="text-[#86868B]">No activation requests found</p>
