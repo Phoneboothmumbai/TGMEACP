@@ -1452,15 +1452,19 @@ async def upload_invoice(request_id: str, file: UploadFile = File(...), user: di
 @api_router.get("/stats")
 async def get_stats(user: dict = Depends(get_current_user)):
     total = await db.activation_requests.count_documents({})
+    pending_approval = await db.activation_requests.count_documents({"status": "pending_approval"})
     pending = await db.activation_requests.count_documents({"status": "pending"})
     activated = await db.activation_requests.count_documents({"status": "activated"})
     payment_pending = await db.activation_requests.count_documents({"status": "payment_pending"})
+    declined = await db.activation_requests.count_documents({"status": "declined"})
     
     return {
         "total": total,
+        "pending_approval": pending_approval,
         "pending": pending,
         "activated": activated,
-        "payment_pending": payment_pending
+        "payment_pending": payment_pending,
+        "declined": declined
     }
 
 # ==================== HEALTH CHECK ====================
