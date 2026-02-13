@@ -134,7 +134,7 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
             </Button>
-            <Link to="/new-request">
+            <Link to="/admin/new-request">
               <Button className="bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-full px-5 gap-2" data-testid="new-request-btn">
                 <PlusCircle className="w-4 h-4" />
                 <span className="hidden sm:inline">New Request</span>
