@@ -278,12 +278,40 @@ export default function Dashboard() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Link to={`/admin/request/${request.id}`}>
-                          <Button variant="ghost" size="sm" className="hover:bg-[#F5F5F7] gap-1.5" data-testid={`view-request-${request.id}`}>
-                            <Eye className="w-4 h-4" />
-                            View
-                          </Button>
-                        </Link>
+                        <div className="flex items-center gap-1">
+                          {request.status === 'pending_approval' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleApprove(request.id)}
+                                disabled={actionLoading[request.id] === 'approve'}
+                                className="hover:bg-green-50 text-green-600 gap-1"
+                                data-testid={`approve-request-${request.id}`}
+                              >
+                                <ThumbsUp className="w-4 h-4" />
+                                {actionLoading[request.id] === 'approve' ? '...' : 'Approve'}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDecline(request.id)}
+                                disabled={actionLoading[request.id] === 'decline'}
+                                className="hover:bg-red-50 text-red-600 gap-1"
+                                data-testid={`decline-request-${request.id}`}
+                              >
+                                <ThumbsDown className="w-4 h-4" />
+                                {actionLoading[request.id] === 'decline' ? '...' : 'Decline'}
+                              </Button>
+                            </>
+                          )}
+                          <Link to={`/admin/request/${request.id}`}>
+                            <Button variant="ghost" size="sm" className="hover:bg-[#F5F5F7] gap-1.5" data-testid={`view-request-${request.id}`}>
+                              <Eye className="w-4 h-4" />
+                              View
+                            </Button>
+                          </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
