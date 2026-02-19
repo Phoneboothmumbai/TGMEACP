@@ -659,7 +659,7 @@ async def generate_invoice_pdf(request_data: dict, filename: str) -> str:
         [
             [
                 Paragraph(f"<b>{shop_name}</b>", title_style),
-                Paragraph(f"{shop_addr['address']}<br/>{shop_addr['city']}, {shop_addr['pin']}<br/>Phone: {shop_phone}<br/>State: {shop_addr['state']}", header_style)
+                Paragraph(f"{shop_addr['address']}<br/>{shop_addr['city']}, {shop_addr['pin']}<br/>State: {shop_addr['state']}", header_style)
             ],
             [
                 Paragraph("<b>Sale Order</b>", ParagraphStyle('SO', parent=styles['Heading2'], fontSize=14, alignment=2)),
