@@ -474,17 +474,23 @@ SHOP_NAMES = [
 
 # Indian addresses for realistic invoices
 SHOP_ADDRESSES = [
-    {"address": "Shop 12, Linking Road, Bandra West", "city": "Mumbai", "pin": "400050", "state": "27-Maharashtra", "phone": "9820098200"},
-    {"address": "45, MG Road, Camp Area", "city": "Pune", "pin": "411001", "state": "27-Maharashtra", "phone": "9890123456"},
-    {"address": "23, Brigade Road, Near Commercial Street", "city": "Bangalore", "pin": "560001", "state": "29-Karnataka", "phone": "9845012345"},
-    {"address": "F-15, Connaught Place, Block F", "city": "New Delhi", "pin": "110001", "state": "07-Delhi", "phone": "9811234567"},
-    {"address": "Shop 8, Anna Salai, Opposite Express Avenue", "city": "Chennai", "pin": "600002", "state": "33-Tamil Nadu", "phone": "9841234567"},
-    {"address": "102, CG Road, Navrangpura", "city": "Ahmedabad", "pin": "380009", "state": "24-Gujarat", "phone": "9825678901"},
-    {"address": "28, Park Street, Near Park Circus", "city": "Kolkata", "pin": "700017", "state": "19-West Bengal", "phone": "9830123456"},
-    {"address": "5, Sector 17, Plaza Market", "city": "Chandigarh", "pin": "160017", "state": "04-Chandigarh", "phone": "9815012345"},
-    {"address": "Shop 33, Hazratganj, Main Road", "city": "Lucknow", "pin": "226001", "state": "09-Uttar Pradesh", "phone": "9839012345"},
-    {"address": "201, MI Road, Near Statue Circle", "city": "Jaipur", "pin": "302001", "state": "08-Rajasthan", "phone": "9829012345"}
+    {"address": "Shop 12, Linking Road, Bandra West", "city": "Mumbai", "pin": "400050", "state": "27-Maharashtra"},
+    {"address": "45, MG Road, Camp Area", "city": "Pune", "pin": "411001", "state": "27-Maharashtra"},
+    {"address": "23, Brigade Road, Near Commercial Street", "city": "Bangalore", "pin": "560001", "state": "29-Karnataka"},
+    {"address": "F-15, Connaught Place, Block F", "city": "New Delhi", "pin": "110001", "state": "07-Delhi"},
+    {"address": "Shop 8, Anna Salai, Opposite Express Avenue", "city": "Chennai", "pin": "600002", "state": "33-Tamil Nadu"},
+    {"address": "102, CG Road, Navrangpura", "city": "Ahmedabad", "pin": "380009", "state": "24-Gujarat"},
+    {"address": "28, Park Street, Near Park Circus", "city": "Kolkata", "pin": "700017", "state": "19-West Bengal"},
+    {"address": "5, Sector 17, Plaza Market", "city": "Chandigarh", "pin": "160017", "state": "04-Chandigarh"},
+    {"address": "Shop 33, Hazratganj, Main Road", "city": "Lucknow", "pin": "226001", "state": "09-Uttar Pradesh"},
+    {"address": "201, MI Road, Near Statue Circle", "city": "Jaipur", "pin": "302001", "state": "08-Rajasthan"}
 ]
+
+def generate_random_indian_phone():
+    """Generate a random 10-digit Indian mobile number starting with 6, 7, 8, or 9"""
+    first_digit = random.choice(['6', '7', '8', '9'])
+    remaining_digits = ''.join(random.choices(string.digits, k=9))
+    return first_digit + remaining_digits
 
 # Product pricing based on AppleCare+ plan description
 PRODUCT_PRICING = {
