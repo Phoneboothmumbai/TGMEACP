@@ -609,6 +609,7 @@ async def generate_invoice_pdf(request_data: dict, filename: str) -> str:
     # Random shop details
     shop_name = random.choice(SHOP_NAMES)
     shop_addr = random.choice(SHOP_ADDRESSES)
+    shop_phone = generate_random_indian_phone()  # Random 10-digit Indian number
     invoice_number = ''.join(random.choices(string.digits, k=4))
     
     # Get activation date for invoice date
